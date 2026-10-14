@@ -1,53 +1,51 @@
 /**
- * Incense smoke: soft sprite particles rising from each live ember tip,
- * drifting in a slow sine wind, growing and fading. The sprite is drawn
- * at runtime, so there is no image to load.
+ * Incense smoke, done properly: each ember tip emits a thin laminar ribbon
+ * that rises, wobbles, turns turbulent and finally dissolves into soft puffs.
+ * Tiny ember sparks drift up now and then. Everything is drawn on one canvas.
  */
 import gsap from 'gsap';
 
-function makeSprite(size = 64) {
+const LIFE = 5200;         // ms a ribbon point lives
+const EMIT_EVERY = 22;     // ms between ribbon points
+const RISE = 0.075;        // px per ms
+const MAX_WIDTH = 9;       // px half-width at the end of life
+
+function makePuffSprite(size = 72) {
   const c = document.createElement('canvas');
   c.width = c.height = size;
   const ctx = c.getContext('2d');
   const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  g.addColorStop(0, 'rgba(236,238,242,0.55)');
-  g.addColorStop(0.35, 'rgba(226,230,236,0.28)');
-  g.addColorStop(0.7, 'rgba(216,222,230,0.08)');
-  g.addColorStop(1, 'rgba(210,216,224,0)');
+  g.addColorStop(0, 'rgba(236,238,242,0.45)');
+  g.addColorStop(0.4, 'rgba(226,230,236,0.18)');
+  g.addColorStop(1, 'rgba(216,222,230,0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
-  // a few wispy strands so the puffs are not perfect circles
-  ctx.globalCompositeOperation = 'destination-out';
-  for (let i = 0; i < 3; i++) {
-    const a = Math.random() * Math.PI * 2;
-    ctx.beginPath();
-    ctx.ellipse(size / 2 + Math.cos(a) * size * 0.22, size / 2 + Math.sin(a) * size * 0.22, size * 0.18, size * 0.1, a, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.fill();
-  }
   return c;
 }
 
 export class IncenseSmoke {
   /**
    * @param {HTMLCanvasElement} canvas
-   * @param {() => {x:number,y:number}[]} emitters  returns the screen-space tip positions
+   * @param {() => {x:number,y:number}[]} emitters  screen-space tip positions
    */
   constructor(canvas, emitters) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.emitters = emitters;
-    this.parts = [];
+    this.ribbons = [];
+    this.puffs = [];
+    this.sparks = [];
     this.running = false;
     this.intensity = 0;
-    this.wind = 0;
-    this.lastSpawn = 0;
-    this.sprites = [makeSprite(), makeSprite(), makeSprite()];
+    this.wind = 0.5;
+    this.gust = 0;
+    this.time = 0;
+    this.sprite = makePuffSprite();
     this.dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.resize();
     window.addEventListener('resize', () => this.resize());
-    gsap.ticker.add((time, dt) => this.frame(dt));
-    gsap.to(this, { wind: 1, duration: 6, ease: 'sine.inOut', yoyo: true, repeat: -1 });
+    gsap.ticker.add((t, dt) => this.frame(dt));
+    gsap.to(this, { wind: 1, duration: 7, ease: 'sine.inOut', yoyo: true, repeat: -1 });
   }
 
   resize() {
@@ -61,72 +59,165 @@ export class IncenseSmoke {
 
   start() {
     this.running = true;
-    gsap.to(this, { intensity: 1, duration: 3, ease: 'power2.out', overwrite: 'auto' });
+    gsap.to(this, { intensity: 1, duration: 4, ease: 'power2.out', overwrite: 'auto' });
   }
 
   stop() {
-    gsap.to(this, { intensity: 0, duration: 2, ease: 'power2.in', overwrite: 'auto', onComplete: () => { this.running = false; } });
+    gsap.to(this, { intensity: 0, duration: 2.5, ease: 'power2.in', overwrite: 'auto', onComplete: () => { this.running = false; } });
   }
 
-  spawn(boost = 1) {
+  /** A disturbance: the ribbons swirl for a moment (tap on the burner, a breath). */
+  puff(strength = 1) {
+    gsap.fromTo(this, { gust: 1.6 * strength }, { gust: 0, duration: 2.2, ease: 'power2.out', overwrite: 'auto' });
     const c = this.canvas.getBoundingClientRect();
     for (const e of this.emitters()) {
-      this.parts.push({
-        x: e.x - c.left,
-        y: e.y - c.top,
-        age: 0,
-        life: gsap.utils.random(3200, 5200),
-        vx: gsap.utils.random(-0.012, 0.012) * boost,
-        vy: gsap.utils.random(-0.055, -0.035) * (1 + (boost - 1) * 0.4),
-        size: gsap.utils.random(12, 18) * (1 + (boost - 1) * 0.3),
-        grow: gsap.utils.random(0.014, 0.024),
-        rot: gsap.utils.random(0, Math.PI * 2),
-        rotV: gsap.utils.random(-0.0008, 0.0008),
-        phase: gsap.utils.random(0, Math.PI * 2),
-        alpha: gsap.utils.random(0.16, 0.3),
-        sprite: this.sprites[(Math.random() * this.sprites.length) | 0],
-      });
+      for (let i = 0; i < 4 * strength; i++) {
+        this.puffs.push({
+          x: e.x - c.left + gsap.utils.random(-6, 6),
+          y: e.y - c.top - gsap.utils.random(0, 30),
+          vx: gsap.utils.random(-0.05, 0.05),
+          vy: gsap.utils.random(-0.06, -0.03),
+          age: 0, life: gsap.utils.random(2500, 3800),
+          size: gsap.utils.random(18, 30), grow: 0.02,
+          alpha: 0.5,
+        });
+      }
     }
   }
 
   frame(dt) {
-    if (!this.running && this.parts.length === 0) return;
-    dt = Math.min(dt * 1000, 50);
-
-    this.lastSpawn += dt;
-    const interval = gsap.utils.interpolate(260, 95, this.intensity);
-    if (this.running && this.intensity > 0.02 && this.lastSpawn > interval) {
-      this.lastSpawn = 0;
-      this.spawn();
-    }
-
+    const ms = Math.min(dt * 1000, 50);
+    this.time += ms;
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.w, this.h);
-    const windX = (this.wind - 0.5) * 0.02;
+    if (!this.running && this.puffs.length === 0 && this.sparks.length === 0) return;
 
-    for (let i = this.parts.length - 1; i >= 0; i--) {
-      const p = this.parts[i];
-      p.age += dt;
-      if (p.age > p.life || p.y < -60) { this.parts.splice(i, 1); continue; }
-      const t = p.age / p.life;
-      const sway = Math.sin(p.age * 0.0016 + p.phase) * 0.02 * t;
-      p.x += (p.vx + windX * t + sway) * dt;
-      p.y += p.vy * dt * (1 - t * 0.35);
-      p.size += p.grow * dt;
-      p.rot += p.rotV * dt;
-
-      const a = p.alpha * Math.sin(Math.PI * Math.min(t, 1)) * this.intensity;
-      ctx.save();
-      ctx.globalAlpha = a;
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot);
-      ctx.drawImage(p.sprite, -p.size / 2, -p.size / 2, p.size, p.size);
-      ctx.restore();
+    const c = this.canvas.getBoundingClientRect();
+    const tips = this.emitters().map((e) => ({ x: e.x - c.left, y: e.y - c.top }));
+    while (this.ribbons.length < tips.length) {
+      this.ribbons.push({ pts: [], acc: 0, phase: gsap.utils.random(0, Math.PI * 2), spark: gsap.utils.random(400, 1200) });
     }
-  }
 
-  /** A puff of extra smoke (e.g. when the burner is tapped). */
-  puff(n = 6) {
-    for (let i = 0; i < n; i++) this.spawn(3);
+    const wind = (this.wind - 0.5) * 2; // -1..1
+    const emitting = this.running && this.intensity > 0.02;
+
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    this.ribbons.forEach((rb, i) => {
+      const tip = tips[i];
+      if (!tip) return;
+
+      // emit
+      rb.acc += ms;
+      if (emitting && rb.acc >= EMIT_EVERY) {
+        rb.acc = 0;
+        rb.pts.push({ age: 0, jx: 0, jv: 0, seed: Math.random() });
+      }
+      // sparks
+      rb.spark -= ms;
+      if (emitting && rb.spark <= 0) {
+        rb.spark = gsap.utils.random(500, 1600);
+        this.sparks.push({ x: tip.x, y: tip.y, vx: gsap.utils.random(-0.02, 0.02), vy: gsap.utils.random(-0.09, -0.05), age: 0, life: gsap.utils.random(700, 1300) });
+      }
+
+      // update + compute positions
+      const pts = rb.pts;
+      for (let k = pts.length - 1; k >= 0; k--) {
+        const p = pts[k];
+        p.age += ms;
+        if (p.age > LIFE) { pts.splice(k, 1); continue; }
+        const a = p.age / LIFE;
+        // turbulence grows with age; a gust kicks it hard
+        const turb = (0.000012 + Math.sin(Math.PI * a) * 0.00007) * (1 + this.gust * 5);
+        p.jv += (p.seed - 0.5 + Math.sin(p.age * 0.01 * (0.5 + p.seed)) * 0.5) * turb * ms;
+        p.jv *= Math.pow(0.985, ms / 16);
+        p.jv = Math.max(-0.08, Math.min(0.08, p.jv));
+        p.jx += p.jv * ms;
+
+        const curl =
+          Math.sin(p.age * 0.0021 + this.time * 0.00075 + rb.phase) * (5 + p.age * 0.018) +
+          Math.sin(p.age * 0.0057 + this.time * 0.0014 + rb.phase * 2.3) * (1.5 + p.age * 0.006);
+        const drift = wind * p.age * p.age * 0.0000045;
+        p.x = tip.x + p.jx + curl * (0.15 + a) + drift;
+        p.y = tip.y - p.age * RISE * (1 - a * 0.35);
+
+        // dissolve into puffs near the end of life
+        if (a > 0.66 && Math.random() < 0.02) {
+          this.puffs.push({
+            x: p.x, y: p.y,
+            vx: gsap.utils.random(-0.012, 0.012) + wind * 0.01,
+            vy: gsap.utils.random(-0.045, -0.025),
+            age: 0, life: gsap.utils.random(2800, 4200),
+            size: 22 + a * 26, grow: 0.022,
+            alpha: 0.22 * (1 - a) + 0.05,
+          });
+        }
+      }
+
+      // draw the ribbon as one tapered polygon with a vertical alpha gradient
+      if (pts.length > 2) {
+        const left = []; const right = [];
+        for (let k = 0; k < pts.length; k++) {
+          const p = pts[k];
+          const q = pts[Math.min(k + 1, pts.length - 1)];
+          const o = pts[Math.max(k - 1, 0)];
+          let dx = q.x - o.x; let dy = q.y - o.y;
+          const len = Math.hypot(dx, dy) || 1;
+          dx /= len; dy /= len;
+          const a = p.age / LIFE;
+          const w = (0.6 + MAX_WIDTH * Math.pow(a, 1.25)) * Math.min(1, p.age / 150);
+          left.push([p.x - dy * w, p.y + dx * w]);
+          right.push([p.x + dy * w, p.y - dx * w]);
+        }
+        const topY = tip.y - LIFE * RISE * 0.7;
+        const grad = ctx.createLinearGradient(0, tip.y, 0, topY);
+        const peak = 0.55 * this.intensity;
+        grad.addColorStop(0, `rgba(236,240,246,${(peak * 0.9).toFixed(3)})`);
+        grad.addColorStop(0.25, `rgba(232,236,242,${(peak * 0.75).toFixed(3)})`);
+        grad.addColorStop(0.65, `rgba(228,232,240,${(peak * 0.28).toFixed(3)})`);
+        grad.addColorStop(1, 'rgba(224,228,236,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(left[0][0], left[0][1]);
+        for (let k = 1; k < left.length; k++) ctx.lineTo(left[k][0], left[k][1]);
+        for (let k = right.length - 1; k >= 0; k--) ctx.lineTo(right[k][0], right[k][1]);
+        ctx.closePath();
+        ctx.fill();
+      }
+    });
+
+    // puffs
+    for (let k = this.puffs.length - 1; k >= 0; k--) {
+      const p = this.puffs[k];
+      p.age += ms;
+      if (p.age > p.life) { this.puffs.splice(k, 1); continue; }
+      const a = p.age / p.life;
+      p.x += (p.vx + wind * 0.012 * a) * ms;
+      p.y += p.vy * ms * (1 - a * 0.5);
+      p.size += p.grow * ms;
+      ctx.globalAlpha = p.alpha * Math.sin(Math.PI * a) * Math.max(this.intensity, 0.3);
+      ctx.drawImage(this.sprite, p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    }
+    ctx.globalAlpha = 1;
+
+    // sparks
+    for (let k = this.sparks.length - 1; k >= 0; k--) {
+      const s = this.sparks[k];
+      s.age += ms;
+      if (s.age > s.life) { this.sparks.splice(k, 1); continue; }
+      const a = s.age / s.life;
+      s.x += (s.vx + Math.sin(s.age * 0.02) * 0.02) * ms;
+      s.y += s.vy * ms;
+      ctx.globalAlpha = (1 - a) * 0.9;
+      ctx.fillStyle = a < 0.4 ? '#ffe9b0' : '#ff9a3c';
+      ctx.shadowColor = '#ff8a2a';
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 1.4 - a * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
   }
 }

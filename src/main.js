@@ -3,7 +3,7 @@ import { loadSettings, saveSettings, clearSettings, shareUrl, loadCounters, save
 import { applyStrings, t, STRINGS } from './strings.js';
 import { sound } from './audio.js';
 import { IncenseSmoke } from './smoke.js';
-import { buildBurner } from './burner.js';
+import { buildBurner, OFFERINGS } from './burner.js';
 import { buildServerRoom } from './serverRoom.js';
 import { Fog } from './fog.js';
 import { Petals } from './petals.js';
@@ -76,9 +76,10 @@ function persist() {
 function splitTitle(replay = false) {
   const text = title.textContent;
   title.innerHTML = '';
-  for (const word of text.split(' ')) {
+  const words = text.split(' ');
+  words.forEach((word, wi) => {
     const w = document.createElement('span');
-    w.className = 'word';
+    w.className = 'word' + (wi === words.length - 1 && words.length > 1 ? ' word--accent' : '');
     for (const ch of word) {
       const s = document.createElement('span');
       s.className = 'ch';
@@ -87,7 +88,7 @@ function splitTitle(replay = false) {
     }
     title.appendChild(w);
     title.appendChild(document.createTextNode(' '));
-  }
+  });
   if (replay) {
     gsap.fromTo('.title .ch', { y: 30, opacity: 0, rotateX: -60 }, { y: 0, opacity: 1, rotateX: 0, duration: 0.8, stagger: 0.02, ease: 'power3.out' });
   }
@@ -128,12 +129,17 @@ function parallax() {
   const bgY = gsap.quickTo('.layer--bg', 'y', { duration: 1.2, ease: 'power3.out' });
   const heroX = gsap.quickTo('.hero', 'x', { duration: 1.2, ease: 'power3.out' });
   const burnerX = gsap.quickTo('.burner', 'x', { duration: 1.4, ease: 'power3.out' });
+  const light = $('#pointer-light');
+  const lightX = gsap.quickTo(light, 'x', { duration: 0.9, ease: 'power3.out' });
+  const lightY = gsap.quickTo(light, 'y', { duration: 0.9, ease: 'power3.out' });
   window.addEventListener('pointermove', (e) => {
     const nx = (e.clientX / innerWidth - 0.5);
     const ny = (e.clientY / innerHeight - 0.5);
     bgX(-nx * 30); bgY(-ny * 20);
     heroX(nx * 8);
     burnerX(nx * 14);
+    lightX(e.clientX); lightY(e.clientY);
+    if (!light.dataset.on) { light.dataset.on = '1'; gsap.to(light, { opacity: 1, duration: 1.2 }); }
   }, { passive: true });
 }
 
@@ -168,6 +174,8 @@ const statTime = $('#stat-time');
 const progressBar = $('#progress-bar');
 const progressPct = $('#progress-pct');
 const progress = $('#progress');
+const burningEl = $('#burning');
+const burningTime = $('#burning-time');
 
 function updateStats() {
   statIncense.textContent = counters.incense;
@@ -199,6 +207,8 @@ function tickProgress() {
   if (lit) {
     const s = Math.floor(elapsed);
     statTime.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+    const left = Math.max(0, BURN_SECONDS - s);
+    burningTime.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
   }
 }
 setInterval(tickProgress, 250);
@@ -233,6 +243,8 @@ function light() {
   gsap.delayedCall(0.9, () => sound.bowl(196));
 
   body.dataset.state = 'lit';
+  burningEl.hidden = false;
+  gsap.fromTo(burningEl, { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: 'back.out(2)' });
   art.light(BURN_SECONDS);
   smoke.start();
   petals.rate = 1.4;
@@ -245,6 +257,7 @@ function light() {
     .fromTo('.layer--vignette', { filter: 'brightness(1.6)' }, { filter: 'brightness(1)', duration: 1.4, ease: 'power2.out' }, 0);
 
   toast(t('lit'));
+  gsap.delayedCall(1.2, () => art.bow(3));
 
   // The incense burns out after a while; relight for more karma.
   gsap.delayedCall(BURN_SECONDS + 1, burnOut);
@@ -254,6 +267,7 @@ function burnOut() {
   if (!lit) return;
   lit = false;
   body.dataset.state = 'unlit';
+  burningEl.hidden = true;
   art.extinguish();
   smoke.stop();
   addKarma(10);
@@ -283,6 +297,32 @@ function ringBowl() {
   gsap.fromTo('.scene', { scale: 1.01 }, { scale: 1, duration: 1.2, ease: 'power2.out' });
 }
 
+/* ---------- Bow + offerings ---------- */
+function bow() {
+  sound.unlock();
+  art.bow(1);
+  sound.tick(392, 0.07);
+  gsap.delayedCall(0.5, () => sound.bowl(147));
+  addKarma(2);
+  toast(t('bowed'));
+  gsap.fromTo('.hero', { y: 0 }, { y: 6, duration: 0.5, yoyo: true, repeat: 1, ease: 'sine.inOut' });
+}
+
+let lastOffering = null;
+function offer() {
+  sound.unlock();
+  const kinds = Object.keys(OFFERINGS).filter((k) => k !== lastOffering);
+  const kind = gsap.utils.random(kinds);
+  lastOffering = kind;
+  const label = art.offer(kind);
+  sound.whoosh();
+  gsap.delayedCall(0.35, () => sound.tick(1046, 0.08));
+  addKarma(3);
+  smoke.puff(0.6);
+  toast(t('offered').replace('{item}', label));
+  gsap.fromTo('.burner', { scale: 1 }, { scale: 1.02, duration: 0.25, yoyo: true, repeat: 1, ease: 'sine.inOut' });
+}
+
 /* ---------- Breathing guide ---------- */
 const breathEl = $('#breath');
 const breathLabel = $('#breath-label');
@@ -309,7 +349,7 @@ function startBreathing() {
     .to('.breath__ring', { scale: 1.08, opacity: 1, duration: IN, ease: 'sine.inOut' }, '<')
     .call(() => { breathLabel.textContent = t('hold'); })
     .to('.breath__ring', { scale: 1.1, duration: HOLD, ease: 'none' })
-    .call(() => { breathLabel.textContent = t('exhale'); sound.breath(165, OUT, 0.06); })
+    .call(() => { breathLabel.textContent = t('exhale'); sound.breath(165, OUT, 0.06); smoke.puff(0.8); })
     .to('.breath__core', { scale: 0.4, duration: OUT, ease: 'sine.inOut' }, '<')
     .to('.breath__ring', { scale: 1, opacity: 0.6, duration: OUT, ease: 'sine.inOut' }, '<');
 }
@@ -341,7 +381,7 @@ burner.addEventListener('click', () => {
   if (!lit) { light(); return; }
   sound.unlock();
   sound.tick(520, 0.08);
-  smoke.puff(6);
+  smoke.puff(1);
   gsap.fromTo('.burner', { rotation: -2 }, { rotation: 0, duration: 0.8, ease: 'elastic.out(1, 0.3)' });
   addKarma(1);
 });
@@ -413,6 +453,8 @@ document.addEventListener('keydown', (e) => {
   if (e.target.matches('input, textarea')) return;
   if (e.key === 'l') light();
   if (e.key === 'b') ringBowl();
+  if (e.key === 'p') bow();
+  if (e.key === 'o') offer();
   if (e.key === ' ') { e.preventDefault(); toggleBreathing(); }
   if (e.key === 'm') soundBtn.click();
   if (e.key === 't') { settings.theme = THEMES[(THEMES.indexOf(settings.theme) + 1) % THEMES.length]; persist(); applySettings(); }
@@ -421,6 +463,8 @@ document.addEventListener('keydown', (e) => {
 /* ---------- Wire up ---------- */
 $('#btn-light').addEventListener('click', light);
 $('#btn-bowl').addEventListener('click', ringBowl);
+$('#btn-bow').addEventListener('click', bow);
+$('#btn-offer').addEventListener('click', offer);
 breathBtn.addEventListener('click', toggleBreathing);
 
 // The first interaction anywhere unlocks audio so music can start on the first click.

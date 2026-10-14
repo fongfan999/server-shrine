@@ -22,7 +22,12 @@ with static assets.
   drifts across the server room.
 - **Customizable** – title, subtitle, "back at" time, four themes, and toggles
   for music/effects/petals/fog. Open the ⚙ panel or use URL params.
-- **Keyboard** – `L` light · `B` bowl · `Space` breathe · `M` mute · `T` theme.
+- **The shrine** – two engineers from the ops team kneel at the altar and bow
+  on command; "Make an offering" places energy drinks, instant noodles, rubber
+  ducks, keyboards and other tech offerings on the table; prayers float up as
+  lanterns.
+- **Keyboard** – `L` light · `B` bowl · `P` bow · `O` offer · `Space` breathe ·
+  `M` mute · `T` theme.
 - **Worker API** – `GET /api/status` returns JSON, `GET /api/health` returns `om`.
 
 ## URL parameters

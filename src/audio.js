@@ -26,7 +26,13 @@ class SoundKit {
       this.ctx = new AC();
       this.master = this.ctx.createGain();
       this.master.gain.value = 0.9;
-      this.master.connect(this.ctx.destination);
+      // dry + a soft hall reverb (generated impulse response, no file)
+      const dry = this.ctx.createGain(); dry.gain.value = 0.85;
+      const wet = this.ctx.createGain(); wet.gain.value = 0.32;
+      const conv = this.ctx.createConvolver();
+      conv.buffer = this._impulse(2.8, 2.2);
+      this.master.connect(dry).connect(this.ctx.destination);
+      this.master.connect(conv).connect(wet).connect(this.ctx.destination);
       this.music = new AmbientMusic(this.ctx, this.master);
     }
     if (this.ctx.state === 'suspended') this.ctx.resume();
@@ -52,6 +58,19 @@ class SoundKit {
   }
 
   /* ---------- Helpers ---------- */
+  _impulse(seconds, decay) {
+    const sr = this.ctx.sampleRate;
+    const len = Math.ceil(sr * seconds);
+    const buf = this.ctx.createBuffer(2, len, sr);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      for (let i = 0; i < len; i++) {
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+      }
+    }
+    return buf;
+  }
+
   _noise(duration) {
     const sr = this.ctx.sampleRate;
     const buf = this.ctx.createBuffer(1, Math.ceil(sr * duration), sr);
