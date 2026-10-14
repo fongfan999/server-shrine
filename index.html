@@ -1,35 +1,180 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
-  <title>The servers are meditating 🧘‍♂️</title>
-
-  <link rel="stylesheet" href="assets/stylesheets/sakura.min.css">
-  <link rel="stylesheet" href="assets/stylesheets/app.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#050607" />
+  <meta name="description" content="The servers are meditating. Light some incense, breathe, and we will be back shortly." />
+  <title>The servers are meditating 🧘</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧘%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/styles.css" />
 </head>
-<body>
-  <img class="header-logo" src="https://file.hstatic.net/200000355853/file/logo.svg">
-  <div class="smoke-lines-wrapper">
-    <div class="less-smoke js-less-smoke">
-      <img src="assets/images/smoke-animated-transparent.gif">
+<body data-theme="gold" data-state="unlit">
+  <!-- Layered scene -->
+  <div class="scene" id="scene">
+    <div class="layer layer--bg" id="server-room"></div>
+    <div class="layer layer--vignette"></div>
+    <canvas class="layer layer--fog" id="fog"></canvas>
+    <div class="layer layer--petals" id="petals"></div>
+  </div>
+  <div class="lanterns" id="lanterns" aria-hidden="true"></div>
+
+  <!-- Header -->
+  <header class="top">
+    <a class="logo" href="/" aria-label="Home">
+      <span class="logo__mark" role="img" aria-label="Jemmia"></span>
+    </a>
+    <div class="top__right">
+      <button class="icon-btn" id="btn-sound" type="button" aria-label="Toggle sound" aria-pressed="true" title="Sound">
+        <svg class="ico ico--on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7"/><path class="wave" d="M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>
+        <svg class="ico ico--off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9l5 6M21 9l-5 6"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-settings" type="button" aria-label="Settings" title="Customize">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="hero">
+    <p class="eyebrow" id="eyebrow" data-i18n="eyebrow">Scheduled maintenance</p>
+    <h1 class="title" id="title" data-i18n="title">The servers are meditating</h1>
+    <p class="subtitle" id="subtitle" data-i18n="subtitle">Light some incense, breathe with us, and everything will be back shortly.</p>
+
+    <div class="mantra" aria-live="polite">
+      <span class="mantra__dot"></span>
+      <span class="mantra__text" id="mantra">Clearing cache and karma…</span>
     </div>
 
-    <canvas class="more-smoke js-more-smoke inactive"></canvas>
+    <div class="cta" id="cta">
+      <button class="btn btn--primary" id="btn-light" type="button">
+        <span class="btn__flame" aria-hidden="true"></span>
+        <span data-i18n="light">Light the incense</span>
+      </button>
+      <button class="btn btn--ghost" id="btn-bowl" type="button">
+        <span aria-hidden="true">🔔</span>
+        <span data-i18n="bowl">Ring the bowl</span>
+      </button>
+      <button class="btn btn--ghost" id="btn-breathe" type="button" aria-pressed="false">
+        <span aria-hidden="true">🫁</span>
+        <span data-i18n="breathe">Breathe</span>
+      </button>
+    </div>
+
+    <form class="wish" id="wish-form" autocomplete="off">
+      <label class="wish__label" for="wish-input" data-i18n="wishLabel">Send a wish to the servers</label>
+      <div class="wish__row">
+        <input class="wish__input" id="wish-input" type="text" maxlength="60" placeholder="May the uptime be with you…" data-i18n-placeholder="wishPlaceholder" />
+        <button class="wish__send" type="submit" aria-label="Release lantern">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+        </button>
+      </div>
+    </form>
+  </main>
+
+  <!-- Breathing guide (hidden until toggled) -->
+  <div class="breath" id="breath" hidden>
+    <div class="breath__ring"></div>
+    <div class="breath__core"></div>
+    <div class="breath__label" id="breath-label">Inhale</div>
   </div>
 
-  <div class="incense-holder">
-    <img src="assets/images/incense-holder.png">
-  </div>
+  <!-- The altar -->
+  <section class="altar" aria-label="Incense burner">
+    <div class="altar__glow"></div>
+    <div class="burner" id="burner">
+      <canvas class="burner__smoke" id="smoke"></canvas>
+      <div class="burner__art" id="burner-art" role="img" aria-label="A bronze incense burner with three incense sticks"></div>
+    </div>
+    <div class="altar__stats">
+      <div class="stat">
+        <span class="stat__value" id="stat-incense">0</span>
+        <span class="stat__label" data-i18n="statIncense">incense lit</span>
+      </div>
+      <div class="stat">
+        <span class="stat__value" id="stat-karma">0</span>
+        <span class="stat__label" data-i18n="statKarma">karma points</span>
+      </div>
+      <div class="stat">
+        <span class="stat__value" id="stat-time">00:00</span>
+        <span class="stat__label" data-i18n="statTime">in meditation</span>
+      </div>
+    </div>
+  </section>
 
-  <audio controls autoplay loop class="background-music js-background-music">
-    <source src="assets/audios/meditation.mp3" type="audio/mp3">
-  </audio>
+  <!-- Enlightenment progress -->
+  <footer class="foot">
+    <div class="progress" role="progressbar" aria-label="Enlightenment progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress">
+      <div class="progress__bar" id="progress-bar"></div>
+    </div>
+    <p class="foot__text"><span data-i18n="progressLabel">Enlightenment</span> <span id="progress-pct">0%</span> · <span id="eta-text"></span></p>
+  </footer>
 
-  <canvas class="background-smoke js-background-smoke"></canvas>
+  <!-- Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script type="text/javascript" src="assets/javascripts/sakura.min.js"></script>
-  <script type="text/javascript" src="assets/javascripts/smoke.js"></script>
-  <script type="text/javascript" src="assets/javascripts/app.js"></script>
+  <!-- Settings panel -->
+  <aside class="panel" id="panel" aria-hidden="true">
+    <div class="panel__head">
+      <h2 data-i18n="panelTitle">Customize</h2>
+      <button class="icon-btn" id="btn-close-panel" type="button" aria-label="Close">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="panel__body">
+      <label class="field">
+        <span data-i18n="fTitle">Title</span>
+        <input type="text" name="title" maxlength="60" />
+      </label>
+      <label class="field">
+        <span data-i18n="fSubtitle">Subtitle</span>
+        <input type="text" name="subtitle" maxlength="140" />
+      </label>
+      <label class="field">
+        <span data-i18n="fEta">Back at (ISO time or blank)</span>
+        <input type="datetime-local" name="eta" />
+      </label>
+      <div class="field">
+        <span data-i18n="fTheme">Theme</span>
+        <div class="swatches" id="swatches">
+          <button type="button" class="swatch" data-theme="gold" style="--c:#e8b54d" aria-label="Gold"></button>
+          <button type="button" class="swatch" data-theme="jade" style="--c:#5ad1a8" aria-label="Jade"></button>
+          <button type="button" class="swatch" data-theme="sakura" style="--c:#ff9fc1" aria-label="Sakura"></button>
+          <button type="button" class="swatch" data-theme="ember" style="--c:#ff6b3d" aria-label="Ember"></button>
+        </div>
+      </div>
+      <label class="field field--row">
+        <span data-i18n="fMusic">Background music</span>
+        <input type="checkbox" name="music" checked />
+      </label>
+      <label class="field field--row">
+        <span data-i18n="fSfx">Sound effects</span>
+        <input type="checkbox" name="sfx" checked />
+      </label>
+      <label class="field field--row">
+        <span data-i18n="fPetals">Falling petals</span>
+        <input type="checkbox" name="petals" checked />
+      </label>
+      <label class="field field--row">
+        <span data-i18n="fFog">Ambient fog</span>
+        <input type="checkbox" name="fog" checked />
+      </label>
+      <div class="panel__actions">
+        <button class="btn btn--ghost btn--small" type="button" id="btn-copy-link">
+          <span data-i18n="copyLink">Copy share link</span>
+        </button>
+        <button class="btn btn--ghost btn--small" type="button" id="btn-reset">
+          <span data-i18n="reset">Reset</span>
+        </button>
+      </div>
+      <p class="panel__hint" data-i18n="panelHint">Everything here is also a URL parameter, e.g. ?title=…&amp;theme=jade&amp;petals=0</p>
+    </div>
+  </aside>
+  <div class="panel-backdrop" id="panel-backdrop"></div>
+
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>

@@ -1,0 +1,21 @@
+{
+  "name": "incense-burner",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The servers are meditating — a zen maintenance page with incense, smoke, petals and sound.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "cf:dev": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "dependencies": {
+    "gsap": "^3.15.0"
+  },
+  "devDependencies": {
+    "vite": "^8.3.4",
+    "wrangler": "^4.151.0"
+  }
+}

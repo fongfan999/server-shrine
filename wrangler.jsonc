@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "incense-burner",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true
+  },
+  "observability": {
+    "enabled": true
+  }
+  // To serve on your own domain, add e.g.:
+  // "routes": [{ "pattern": "status.example.com", "custom_domain": true }]
+}
