@@ -1,34 +1,43 @@
-# The servers are meditating 🧘
+# Server Shrine 🪔
 
-A zen maintenance page. Light the incense, ring the bowl, breathe, send a wish
-to the servers, and wait for enlightenment (or the deploy to finish, whichever
-comes first).
+When the servers are down, the team prays together. Open a shrine, send the
+link to your teammates, and light incense, ring the bowl, bow, make offerings
+and send prayers to the rack, all in real time on one shared altar.
+
+Inspired by every "I haven't been able to reach the server for an hour" thread,
+and the classic photo of sysadmins praying to a rack with incense. A
+[Wot Da Fong](https://wotdafong.dev/) project.
 
 Built with [Vite](https://vite.dev), [GSAP](https://gsap.com) and the Web Audio
-API, deployed on [Cloudflare Workers](https://developers.cloudflare.com/workers/)
-with static assets.
+API, running on [Cloudflare Workers](https://developers.cloudflare.com/workers/)
+with a [Durable Object](https://developers.cloudflare.com/durable-objects/) per
+shrine.
+
+## How it works
+
+- `/` is a solo shrine. It also works as a maintenance page (custom title,
+  subtitle and "back at" time).
+- `/new` redirects to a freshly named shared shrine, e.g. `/r/serene-rack-42`.
+- `/r/:room` asks for a name and avatar, then joins that room's `Shrine`
+  Durable Object over a WebSocket. The room keeps the shared state: who is
+  here, incense burn time, karma, the offerings on the table and the last 12
+  prayers. Late joiners see the incense mid-burn and the prayers they missed.
+- Durable Objects use the WebSocket Hibernation API, so idle shrines cost
+  nothing. A shrine nobody visits for 30 days deletes itself.
 
 ## Features
 
-- **GSAP everywhere** – staggered title reveal, elastic burner entrance,
-  pointer parallax, petals, floating wish lanterns, breathing guide, toasts.
-- **No image or audio files** – the incense burner is inline SVG (the sticks
-  really burn down), the server room is drawn procedurally with hundreds of
-  blinking LEDs, the smoke sprite is painted at runtime, and the music is
-  generative ambient synthesized in the browser. Only the logo is a file.
-- **Sound** – generative drone, pads, pentatonic bells and wind, plus one-shot
-  effects: lighter strike, singing bowl, lantern whoosh, UI ticks, breath pads.
-- **Canvas smoke** – incense smoke rises from each live ember tip; ambient fog
-  drifts across the server room.
-- **Customizable** – title, subtitle, "back at" time, four themes, and toggles
-  for music/effects/petals/fog. Open the ⚙ panel or use URL params.
-- **The shrine** – two engineers from the ops team kneel at the altar and bow
-  on command; "Make an offering" places energy drinks, instant noodles, rubber
-  ducks, keyboards and other tech offerings on the table; prayers float up as
-  lanterns.
-- **Keyboard** – `L` light · `B` bowl · `P` bow · `O` offer · `Space` breathe ·
+- **Shared altar**: everyone sees and hears every action, and the activity
+  feed shows who did what (repeats fold into "rang the bowl ×3").
+- **Drawn, not downloaded**: the incense burner is inline SVG (the sticks
+  really burn down), the server room is procedural, the smoke is painted at
+  runtime, and the ambient music is synthesized in the browser.
+- **Customizable**: title, subtitle, "back at" time, four themes, toggles for
+  music/effects/petals/fog. Open the settings panel or use URL params.
+- **Keyboard**: `L` light · `B` bowl · `P` bow · `O` offer · `Space` breathe ·
   `M` mute · `T` theme.
-- **Worker API** – `GET /api/status` returns JSON, `GET /api/health` returns `om`.
+- **Worker API**: `GET /api/status` (JSON), `GET /api/health` (`om`),
+  `GET /api/rooms/:room/ws` (WebSocket).
 
 ## URL parameters
 
@@ -40,20 +49,16 @@ with static assets.
 | `theme`    | `gold` `jade` `sakura` `ember`           | `?theme=jade`                  |
 | `music` `sfx` `petals` `fog` | `1` / `0`              | `?petals=0&fog=0`              |
 
-The settings panel's **Copy share link** button builds this URL for you.
+They work on room pages too: `/r/serene-rack-42?theme=jade`.
 
 ## Develop
 
 ```bash
 npm install
-npm run dev        # Vite dev server at http://localhost:5173
+npm run dev        # Vite + the Worker and Durable Object in workerd, http://localhost:5173
 ```
 
-## Run the Worker locally
-
-```bash
-npm run cf:dev     # builds, then wrangler dev at http://localhost:8787
-```
+`npm run preview` builds and serves the production bundle locally.
 
 ## Deploy
 
@@ -68,19 +73,21 @@ To serve from your own hostname, add a `routes` entry to `wrangler.jsonc`.
 
 ```
 index.html          page shell
-src/main.js         wiring, intro timeline, interactions
-src/burner.js       inline-SVG incense burner (burn-down, embers, shine)
+src/main.js         wiring, intro, actions, activity feed, shared-shrine client
+src/room.js         room URL, saved name, reconnecting WebSocket
+src/burner.js       inline-SVG incense burner (burn-down, embers, offerings)
 src/serverRoom.js   procedural SVG server room with blinking LEDs
 src/audio.js        Web Audio sound kit (one-shot effects)
 src/music.js        generative ambient music
 src/smoke.js        incense smoke particles (runtime sprite)
 src/fog.js          ambient fog
 src/petals.js       falling petals (GSAP)
-src/lanterns.js     wish lanterns (GSAP)
+src/lanterns.js     prayer lanterns (GSAP)
 src/config.js       settings: URL params > localStorage > defaults
-src/strings.js      copy and mantras
-src/styles.css      design tokens + themes
-public/assets/      logo only
-worker/index.js     Cloudflare Worker (API + asset headers)
-wrangler.jsonc      Worker config
+src/strings.js      brand name, copy and mantras
+src/styles.css      design tokens, themes, layout
+public/favicon.svg  the mark
+worker/index.js     Cloudflare Worker: routes, /new, API, asset headers
+worker/shrine.js    Shrine Durable Object: one per room
+wrangler.jsonc      Worker + Durable Object config
 ```

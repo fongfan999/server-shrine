@@ -3,22 +3,22 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#050607" />
-  <meta name="description" content="The servers are meditating. The ops team is praying to the rack. Light some incense, make an offering, and we will be back shortly." />
+  <meta name="theme-color" content="#0b0c0a" />
+  <meta name="description" content="Server Shrine: when the servers are down, the team prays together. Open a shrine, share the link, light incense, ring the bowl and send prayers to the rack in real time." />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="The servers are meditating 🧘" />
-  <meta property="og:description" content="The ops team is praying to the rack. Light some incense, make an offering, and we will be back shortly." />
+  <meta property="og:title" content="Server Shrine: pray for uptime, together" />
+  <meta property="og:description" content="The servers are down. Open a shrine, invite the team, and pray to the rack together in real time." />
   <meta name="twitter:card" content="summary" />
-  <title>The servers are meditating 🧘</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🧘%3C/text%3E%3C/svg%3E" />
+  <title>Server Shrine</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/src/styles.css" />
 </head>
-<body data-theme="gold" data-state="unlit">
+<body data-theme="gold" data-state="unlit" data-mode="solo">
   <!-- Layered scene -->
-  <div class="scene" id="scene">
+  <div class="scene" id="scene" aria-hidden="true">
     <div class="layer layer--bg" id="server-room"></div>
     <div class="layer layer--vignette"></div>
     <canvas class="layer layer--fog" id="fog"></canvas>
@@ -29,74 +29,149 @@
   <canvas class="smoke-layer" id="smoke" aria-hidden="true"></canvas>
   <div class="lanterns" id="lanterns" aria-hidden="true"></div>
 
-  <!-- Header -->
-  <header class="top">
-    <a class="logo" href="/" aria-label="Home">
-      <span class="logo__mark" role="img" aria-label="Jemmia"></span>
+  <!-- Top bar -->
+  <header class="bar">
+    <a class="brand" href="/" aria-label="Server Shrine home">
+      <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
+        <path class="brand__smoke" d="M12 9c-2-2 1-4-1-6M16 8c-2-2.5 2-4 0-6.5M20 9c-2-2 1-4-1-6" />
+        <path class="brand__sticks" d="M12 19V10M16 19V9M20 19V10" />
+        <path class="brand__bowl" d="M6 18h20l-1.6 6.2A4 4 0 0 1 20.5 27h-9a4 4 0 0 1-3.9-2.8L6 18z" />
+      </svg>
+      <span class="brand__name">Server Shrine</span>
     </a>
-    <div class="top__right">
-      <button class="icon-btn" id="btn-sound" type="button" aria-label="Toggle sound" aria-pressed="true" title="Sound">
+
+    <div class="room-chip" id="room-chip" hidden>
+      <span class="status-dot" id="room-status" data-status="connecting"></span>
+      <span class="room-chip__name" id="room-name"></span>
+    </div>
+
+    <div class="bar__right">
+      <button class="presence" id="presence" type="button" hidden aria-label="People in the shrine"></button>
+      <a class="btn btn--accent btn--sm" id="btn-together" href="/new">
+        <span aria-hidden="true">🙏</span>
+        <span class="hide-sm" data-i18n="together">Pray with your team</span>
+        <span class="show-sm" data-i18n="togetherShort">Team</span>
+      </a>
+      <button class="btn btn--glass btn--sm" id="btn-invite" type="button" hidden>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>
+        <span data-i18n="invite">Invite</span>
+      </button>
+      <button class="icon-btn" id="btn-sound" type="button" aria-label="Sound" aria-pressed="true" title="Sound (M)">
         <svg class="ico ico--on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7"/><path class="wave" d="M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>
         <svg class="ico ico--off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9l5 6M21 9l-5 6"/></svg>
       </button>
-      <button class="icon-btn" id="btn-settings" type="button" aria-label="Settings" title="Customize">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      <button class="icon-btn" id="btn-settings" type="button" aria-label="Customize" title="Customize">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
       </button>
     </div>
   </header>
 
-  <!-- Main content -->
-  <main class="hero">
-    <p class="eyebrow" id="eyebrow" data-i18n="eyebrow">Scheduled maintenance</p>
-    <h1 class="title" id="title" data-i18n="title">The servers are meditating</h1>
-    <p class="subtitle" id="subtitle" data-i18n="subtitle">Light some incense, breathe with us, and everything will be back shortly.</p>
+  <main class="stage">
+    <!-- Left: who is here + what they did -->
+    <aside class="side side--left" aria-label="Shrine activity">
+      <section class="card" id="people-card" hidden>
+        <h2 class="label"><span data-i18n="inShrine">In the shrine</span> <span class="label__count" id="people-count">1</span></h2>
+        <ul class="people" id="people"></ul>
+      </section>
 
-    <div class="mantra" aria-live="polite">
-      <span class="mantra__dot"></span>
-      <span class="mantra__text" id="mantra">Clearing cache and karma…</span>
-    </div>
+      <section class="card card--solo" id="solo-card">
+        <h2 class="label" data-i18n="soloLabel">Praying alone</h2>
+        <p class="card__text" data-i18n="soloText">Open a shared shrine and send the link to your team. Everyone's incense, offerings and prayers land on the same altar, live.</p>
+        <a class="btn btn--accent btn--block" href="/new">
+          <span aria-hidden="true">🙏</span>
+          <span data-i18n="soloCta">Open a team shrine</span>
+        </a>
+      </section>
 
-    <div class="cta" id="cta">
-      <button class="btn btn--primary" id="btn-light" type="button">
-        <span class="btn__flame" aria-hidden="true"></span>
-        <span data-i18n="light">Light the incense</span>
-      </button>
-      <div class="burning" id="burning" hidden>
-        <span class="btn__flame" aria-hidden="true"></span>
-        <span data-i18n="burning">Incense burning</span>
-        <span class="burning__time" id="burning-time">10:00</span>
+      <section class="card card--feed">
+        <h2 class="label" data-i18n="feedLabel">Activity</h2>
+        <ol class="feed" id="feed" aria-live="polite"></ol>
+        <p class="feed__empty" id="feed-empty" data-i18n="feedEmpty">Quiet so far. Light the incense to begin.</p>
+      </section>
+    </aside>
+
+    <!-- Center: heading + altar -->
+    <section class="center">
+      <div class="heading">
+        <p class="eyebrow" id="eyebrow" data-i18n="eyebrow">Scheduled maintenance</p>
+        <h1 class="title" id="title" data-i18n="title">The servers are meditating</h1>
+        <p class="subtitle" id="subtitle" data-i18n="subtitle">The ops team is already praying. Light some incense, make an offering, and the rack will hum again shortly.</p>
+        <p class="mantra" aria-live="polite"><span class="mantra__dot" aria-hidden="true"></span><span id="mantra">Clearing cache and karma…</span></p>
       </div>
-    </div>
-    <div class="cta cta--secondary">
-      <button class="btn btn--ghost" id="btn-bowl" type="button">
-        <span aria-hidden="true">🔔</span>
-        <span data-i18n="bowl">Ring the bowl</span>
-      </button>
-      <button class="btn btn--ghost" id="btn-bow" type="button">
-        <span aria-hidden="true">🙇</span>
-        <span data-i18n="bow">Bow</span>
-      </button>
-      <button class="btn btn--ghost" id="btn-offer" type="button">
-        <span aria-hidden="true">🍜</span>
-        <span data-i18n="offer">Make an offering</span>
-      </button>
-      <button class="btn btn--ghost" id="btn-breathe" type="button" aria-pressed="false">
-        <span aria-hidden="true">🫁</span>
-        <span data-i18n="breathe">Breathe</span>
-      </button>
-    </div>
 
-    <form class="wish" id="wish-form" autocomplete="off">
-      <label class="wish__label sr-only" for="wish-input" data-i18n="wishLabel">Say a prayer to the servers</label>
-      <div class="wish__row">
-        <span class="wish__icon" aria-hidden="true">🙏</span>
-        <input class="wish__input" id="wish-input" type="text" maxlength="60" placeholder="Please don’t crash during the demo…" data-i18n-placeholder="wishPlaceholder" />
-        <button class="wish__send" type="submit" aria-label="Release lantern">
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
-        </button>
+      <div class="altar">
+        <div class="altar__glow"></div>
+        <div class="burner" id="burner">
+          <div class="burner__art" id="burner-art" role="img" aria-label="A bronze incense burner on an altar table, with candles and two kneeling engineers"></div>
+        </div>
       </div>
-    </form>
+    </section>
+
+    <!-- Right: the altar's state -->
+    <aside class="side side--right" aria-label="Altar status">
+      <section class="card card--status">
+        <h2 class="label" data-i18n="altarLabel">Altar</h2>
+        <div class="burn">
+          <div class="burn__row">
+            <span class="burn__state" id="burn-state" data-i18n="cold">Incense is cold</span>
+            <span class="burn__time" id="burning-time"></span>
+          </div>
+          <div class="meter"><div class="meter__bar" id="burn-bar"></div></div>
+        </div>
+        <dl class="stats">
+          <div class="stat"><dt data-i18n="statIncense">Incense lit</dt><dd id="stat-incense">0</dd></div>
+          <div class="stat"><dt data-i18n="statKarma">Karma</dt><dd id="stat-karma">0</dd></div>
+          <div class="stat"><dt data-i18n="statTime">In meditation</dt><dd id="stat-time">00:00</dd></div>
+        </dl>
+        <div class="enlight">
+          <div class="burn__row">
+            <span data-i18n="progressLabel">Enlightenment</span>
+            <span class="burn__time" id="progress-pct">0%</span>
+          </div>
+          <div class="meter" role="progressbar" aria-label="Enlightenment" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress">
+            <div class="meter__bar meter__bar--soft" id="progress-bar"></div>
+          </div>
+        </div>
+        <p class="eta"><span class="status-dot" data-status="open" aria-hidden="true"></span><span id="eta-text"></span></p>
+      </section>
+    </aside>
   </main>
+
+  <!-- Bottom: the action dock -->
+  <footer class="dock">
+    <form class="pray" id="wish-form" autocomplete="off">
+      <label class="sr-only" for="wish-input" data-i18n="wishLabel">Say a prayer to the servers</label>
+      <span class="pray__icon" aria-hidden="true">🏮</span>
+      <input class="pray__input" id="wish-input" type="text" maxlength="60" placeholder="Please don’t crash during the demo…" data-i18n-placeholder="wishPlaceholder" />
+      <button class="pray__send" type="submit" aria-label="Release prayer lantern">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+      </button>
+    </form>
+    <div class="actions">
+      <button class="act" id="btn-bowl" type="button" title="Ring the bowl (B)">
+        <span class="act__icon" aria-hidden="true">🔔</span><span class="act__label" data-i18n="bowl">Ring bowl</span><kbd>B</kbd>
+      </button>
+      <button class="act" id="btn-bow" type="button" title="Bow (P)">
+        <span class="act__icon" aria-hidden="true">🙇</span><span class="act__label" data-i18n="bow">Bow</span><kbd>P</kbd>
+      </button>
+      <button class="act act--primary" id="btn-light" type="button" title="Light the incense (L)">
+        <span class="act__flame" aria-hidden="true"></span>
+        <span class="act__label act__label--unlit" data-i18n="light">Light incense</span>
+        <span class="act__label act__label--lit"><span data-i18n="burning">Burning</span> <span id="dock-time">10:00</span></span>
+        <kbd>L</kbd>
+      </button>
+      <button class="act" id="btn-offer" type="button" title="Make an offering (O)">
+        <span class="act__icon" aria-hidden="true">🍜</span><span class="act__label" data-i18n="offer">Offer</span><kbd>O</kbd>
+      </button>
+      <button class="act" id="btn-breathe" type="button" aria-pressed="false" title="Breathe (Space)">
+        <span class="act__icon" aria-hidden="true">🫁</span><span class="act__label" data-i18n="breathe">Breathe</span><kbd>␣</kbd>
+      </button>
+    </div>
+    <p class="credit">
+      <span class="hide-sm" data-i18n="tagline">Pray for uptime, together.</span>
+      <a href="https://wotdafong.dev/" target="_blank" rel="noopener"><span data-i18n="madeBy">Made by</span> Wot Da Fong ↗</a>
+    </p>
+  </footer>
 
   <!-- Breathing guide (hidden until toggled) -->
   <div class="breath" id="breath" hidden>
@@ -105,41 +180,27 @@
     <div class="breath__label" id="breath-label">Inhale</div>
   </div>
 
-  <!-- The altar -->
-  <section class="altar" aria-label="Incense burner">
-    <div class="altar__glow"></div>
-    <div class="burner" id="burner">
-      <div class="burner__art" id="burner-art" role="img" aria-label="A bronze incense burner on an altar table, with candles and two kneeling engineers"></div>
-    </div>
-    <div class="altar__stats">
-      <div class="stat">
-        <span class="stat__value" id="stat-incense">0</span>
-        <span class="stat__label" data-i18n="statIncense">incense lit</span>
-      </div>
-      <div class="stat">
-        <span class="stat__value" id="stat-karma">0</span>
-        <span class="stat__label" data-i18n="statKarma">karma points</span>
-      </div>
-      <div class="stat">
-        <span class="stat__value" id="stat-time">00:00</span>
-        <span class="stat__label" data-i18n="statTime">in meditation</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- Enlightenment progress -->
-  <footer class="foot">
-    <div class="progress" role="progressbar" aria-label="Enlightenment progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress">
-      <div class="progress__bar" id="progress-bar"></div>
-    </div>
-    <p class="foot__text"><span data-i18n="progressLabel">Enlightenment</span> <span id="progress-pct">0%</span> · <span id="eta-text"></span></p>
-  </footer>
+  <!-- Join a room (shown on /r/:room until you have a name) -->
+  <div class="join" id="join" hidden>
+    <form class="join__card" id="join-form" autocomplete="off">
+      <p class="eyebrow" id="join-room"></p>
+      <h2 class="join__title"><span data-i18n="joinTitle">Enter the</span> <em data-i18n="joinTitleAccent">shrine</em></h2>
+      <p class="join__hint" data-i18n="joinHint">Your team is praying for the servers. What should the rack call you?</p>
+      <label class="sr-only" for="join-name">Your name</label>
+      <input class="join__input" id="join-name" type="text" maxlength="24" required />
+      <div class="join__avatars" id="join-avatars" role="radiogroup" aria-label="Pick an avatar"></div>
+      <button class="btn btn--accent btn--block" type="submit">
+        <span aria-hidden="true">🙇</span>
+        <span data-i18n="joinBtn">Kneel at the altar</span>
+      </button>
+    </form>
+  </div>
 
   <!-- Toast -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <!-- Settings panel -->
-  <aside class="panel" id="panel" aria-hidden="true">
+  <aside class="panel" id="panel" aria-hidden="true" aria-label="Customize">
     <div class="panel__head">
       <h2 data-i18n="panelTitle">Customize</h2>
       <button class="icon-btn" id="btn-close-panel" type="button" aria-label="Close">
@@ -156,7 +217,7 @@
         <input type="text" name="subtitle" maxlength="140" />
       </label>
       <label class="field">
-        <span data-i18n="fEta">Back at (ISO time or blank)</span>
+        <span data-i18n="fEta">Back at</span>
         <input type="datetime-local" name="eta" />
       </label>
       <div class="field">
@@ -185,10 +246,13 @@
         <input type="checkbox" name="fog" checked />
       </label>
       <div class="panel__actions">
-        <button class="btn btn--ghost btn--small" type="button" id="btn-copy-link">
+        <button class="btn btn--glass btn--sm" type="button" id="btn-rename" hidden>
+          <span data-i18n="renameBtn">Change name</span>
+        </button>
+        <button class="btn btn--glass btn--sm" type="button" id="btn-copy-link">
           <span data-i18n="copyLink">Copy share link</span>
         </button>
-        <button class="btn btn--ghost btn--small" type="button" id="btn-reset">
+        <button class="btn btn--glass btn--sm" type="button" id="btn-reset">
           <span data-i18n="reset">Reset</span>
         </button>
       </div>

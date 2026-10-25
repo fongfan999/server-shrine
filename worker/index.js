@@ -2,9 +2,16 @@
  * Cloudflare Worker.
  * - /api/status  → JSON status for anyone who wants to poll the meditation.
  * - /api/health  → 200 OK
+ * - /new         → redirects to a freshly named prayer room
+ * - /api/rooms/:room/ws → WebSocket into that room's Shrine Durable Object
+ * - /r/:room     → the page itself (the client notices it is in a room)
  * - everything else → static assets from ./dist (built by Vite) with
  *   security + cache headers added.
  */
+
+import { Shrine } from './shrine.js';
+
+export { Shrine };
 
 let startedAt = 0; // set on first request: Workers freeze the clock until a request arrives
 
@@ -22,6 +29,16 @@ const MANTRAS = [
   'Retrying with exponential compassion…',
   'Kubernetes is also just trying its best.',
 ];
+
+const ROOM_RE = /^[a-z0-9-]{3,48}$/;
+
+const ADJECTIVES = ['quiet', 'sleepy', 'humble', 'patient', 'serene', 'devout', 'stoic', 'mellow', 'eternal', 'golden', 'gentle', 'lucky'];
+const NOUNS = ['lotus', 'rack', 'kernel', 'daemon', 'uptime', 'pagoda', 'packet', 'monk', 'cache', 'socket', 'shrine', 'pod'];
+
+function roomName() {
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+  return `${pick(ADJECTIVES)}-${pick(NOUNS)}-${Math.floor(Math.random() * 90 + 10)}`;
+}
 
 function json(data, init = {}) {
   return new Response(JSON.stringify(data, null, 2), {
@@ -56,7 +73,19 @@ export default {
       });
     }
 
-    // Serve the static site.
+    if (url.pathname === '/new') {
+      return Response.redirect(`${url.origin}/r/${roomName()}${url.search}`, 302);
+    }
+
+    const ws = url.pathname.match(/^\/api\/rooms\/([^/]+)\/ws$/);
+    if (ws) {
+      const room = ws[1].toLowerCase();
+      if (!ROOM_RE.test(room)) return json({ error: 'bad room name' }, { status: 400 });
+      if (request.headers.get('Upgrade') !== 'websocket') return json({ error: 'expected a WebSocket' }, { status: 426 });
+      return env.SHRINE.get(env.SHRINE.idFromName(room)).fetch(request);
+    }
+
+    // Serve the static site (unknown paths such as /r/:room get index.html).
     const res = await env.ASSETS.fetch(request);
     const headers = new Headers(res.headers);
     for (const [k, v] of Object.entries(SECURITY_HEADERS)) headers.set(k, v);

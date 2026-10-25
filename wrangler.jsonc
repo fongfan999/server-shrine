@@ -4,14 +4,17 @@
   "main": "worker/index.js",
   "compatibility_date": "2026-10-01",
   "assets": {
-    "directory": "./dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
     "run_worker_first": true
   },
+  "durable_objects": {
+    "bindings": [{ "name": "SHRINE", "class_name": "Shrine" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Shrine"] }],
   "observability": {
     "enabled": true
   }
-  // To serve on your own domain, add e.g.:
-  // "routes": [{ "pattern": "status.example.com", "custom_domain": true }]
+  // To serve on its own hostname (the zone must be on this Cloudflare account), add e.g.:
+  // "routes": [{ "pattern": "shrine.wotdafong.dev", "custom_domain": true }]
 }

@@ -4,10 +4,16 @@
  */
 import gsap from 'gsap';
 
-export function releaseLantern(container, text, fromEl) {
+export function releaseLantern(container, text, fromEl, author) {
   const el = document.createElement('div');
   el.className = 'lantern';
   el.textContent = text;
+  if (author) {
+    const by = document.createElement('small');
+    by.className = 'lantern__by';
+    by.textContent = author;
+    el.prepend(by);
+  }
   container.appendChild(el);
 
   const from = fromEl?.getBoundingClientRect();

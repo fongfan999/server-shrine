@@ -321,6 +321,11 @@ export function buildBurner(host) {
       });
     },
 
+    /** Jump the burn to `elapsed` seconds in (late joiners, or a tab that was asleep). */
+    syncBurn(elapsed) {
+      burnTl?.time(Math.max(0, elapsed));
+    },
+
     /** Burned out: embers and candles fade, ash falls, fresh sticks appear. */
     extinguish() {
       burnTl?.kill();

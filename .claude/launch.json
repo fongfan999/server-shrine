@@ -8,10 +8,10 @@
       "port": 5173
     },
     {
-      "name": "wrangler",
+      "name": "preview",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "cf:dev"],
-      "port": 8787
+      "runtimeArgs": ["run", "preview", "--", "--port", "4173", "--strictPort"],
+      "port": 4173
     }
   ]
 }

@@ -3,19 +3,19 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "The servers are meditating — a zen maintenance page with incense, smoke, petals and sound.",
+  "description": "Server Shrine: when the servers are down, the team prays together in real time.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "cf:dev": "npm run build && wrangler dev",
-    "deploy": "npm run build && wrangler deploy"
+    "preview": "vite build && vite preview",
+    "deploy": "vite build && wrangler deploy"
   },
   "dependencies": {
     "gsap": "^3.15.0"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.65.0",
     "vite": "^8.3.4",
-    "wrangler": "^4.151.0"
+    "wrangler": "^4.152.0"
   }
 }
