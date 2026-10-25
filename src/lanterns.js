@@ -17,6 +17,7 @@ export function releaseLantern(container, text, fromEl, author) {
   container.appendChild(el);
 
   const from = fromEl?.getBoundingClientRect();
+  if (from) el.style.left = `${from.left + from.width / 2}px`;
   const startY = from ? from.top - innerHeight * 0.6 : 0; // relative to its "bottom: 40%" origin
   const driftX = gsap.utils.random(-90, 90);
 

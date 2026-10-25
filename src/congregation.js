@@ -1,0 +1,181 @@
+/**
+ * The congregation: everyone in the shrine kneels in front of the altar,
+ * backs to us, incense raised, with their name floating above. They bow when
+ * they bow, their incense glows while the altar burns, and the rest of the
+ * page can ask where someone is kneeling (prayer lanterns rise from there).
+ *
+ * Sized in the burner's own units so the people always match the altar.
+ */
+import gsap from 'gsap';
+
+const VB_H = 470;      // the burner's viewBox height
+const SCALE = 1.18;    // same size as the ops team drawn into the burner
+const INNER = 226;     // first slot, just outside the candles (burner units from centre)
+const MIN_INNER = 108; // squeeze in front of the candles when space runs out
+const GAP = 76;
+const MIN_GAP = 46;
+const EDGE = 34;
+
+const FIGURE = `
+<svg class="kneeler__svg" viewBox="-44 -196 88 204" aria-hidden="true">
+  <ellipse cx="0" cy="-2" rx="34" ry="7" fill="#000" opacity="0.55"/>
+  <path d="M -30 0 Q -32 -24 -12 -30 L 14 -30 Q 32 -24 30 0 Z" fill="#06080c"/>
+  <path class="kneeler__rim" d="M -30 0 Q -32 -24 -12 -30" stroke-opacity="0.25" stroke-width="2" fill="none"/>
+  <g class="kneeler__upper">
+    <path d="M -22 -30 L -24 -92 Q 0 -104 24 -92 L 22 -30 Z" fill="#090c12"/>
+    <path class="kneeler__rim" d="M -24 -92 Q 0 -104 24 -92" stroke-opacity="0.5" stroke-width="2" fill="none"/>
+    <path class="kneeler__rim" d="M -22 -30 L -24 -92" stroke-opacity="0.18" stroke-width="2" fill="none"/>
+    <path d="M -20 -86 Q -30 -118 -8 -140 L 0 -146" stroke="#06080c" stroke-width="11" stroke-linecap="round" fill="none"/>
+    <path d="M 20 -86 Q 30 -118 8 -140 L 0 -146" stroke="#06080c" stroke-width="11" stroke-linecap="round" fill="none"/>
+    <circle cx="0" cy="-110" r="15" fill="#06080c"/>
+    <path class="kneeler__rim" d="M -13 -116 Q 0 -128 13 -116" stroke-opacity="0.45" stroke-width="2" fill="none"/>
+    <rect x="-1.2" y="-182" width="2.4" height="38" fill="#b57a50"/>
+    <circle class="kneeler__halo" cx="0" cy="-182" r="7" opacity="0"/>
+    <circle class="kneeler__ember" cx="0" cy="-182" r="2.6" fill="#fff0c0" opacity="0"/>
+  </g>
+</svg>`;
+
+export class Congregation {
+  constructor(host, burnerEl) {
+    this.host = host;
+    this.burner = burnerEl;
+    this.items = new Map(); // id -> { el, upper, ember, halo, person }
+    this.order = [];
+    this.lit = false;
+    this.more = document.createElement('div');
+    this.more.className = 'kneeler-more';
+    this.more.hidden = true;
+    host.appendChild(this.more);
+    new ResizeObserver(() => this.layout()).observe(host);
+  }
+
+  /** Show exactly these people (`list` of {id, name, avatar}), you first. */
+  set(list, meId) {
+    const ids = new Set(list.map((p) => p.id));
+    for (const [id, item] of this.items) {
+      if (ids.has(id)) continue;
+      this.items.delete(id);
+      gsap.to(item.el, { opacity: 0, y: 14, duration: 0.6, ease: 'power2.in', onComplete: () => item.el.remove() });
+    }
+    for (const p of list) {
+      const item = this.items.get(p.id);
+      if (item) { this.label(item, p, p.id === meId); continue; }
+      this.add(p, p.id === meId);
+    }
+    this.order = [...list].sort((a, b) => (b.id === meId) - (a.id === meId)).map((p) => p.id);
+    this.layout();
+  }
+
+  add(person, mine) {
+    const el = document.createElement('div');
+    el.className = 'kneeler';
+    el.innerHTML = `<div class="kneeler__tag"><span class="kneeler__avatar"></span><span class="kneeler__name"></span></div>${FIGURE}`;
+    this.host.appendChild(el);
+    const item = {
+      el,
+      upper: el.querySelector('.kneeler__upper'),
+      ember: el.querySelector('.kneeler__ember'),
+      halo: el.querySelector('.kneeler__halo'),
+      person,
+      placed: false,
+    };
+    this.label(item, person, mine);
+    this.items.set(person.id, item);
+    // a slow, out-of-step sway so the room never looks frozen
+    gsap.to(item.upper, { rotation: gsap.utils.random(-1.6, 1.6), svgOrigin: '0 -30', duration: gsap.utils.random(2.8, 4), yoyo: true, repeat: -1, ease: 'sine.inOut', delay: Math.random() * 2 });
+    if (this.lit) this.glow(item, true);
+  }
+
+  label(item, person, mine) {
+    item.person = person;
+    item.el.classList.toggle('kneeler--me', mine);
+    item.el.querySelector('.kneeler__avatar').textContent = person.avatar;
+    item.el.querySelector('.kneeler__name').textContent = person.name;
+  }
+
+  layout() {
+    const unit = this.burner.clientHeight / VB_H;
+    if (!unit) return;
+    const half = this.host.clientWidth / 2 / unit;
+    const outer = Math.max(MIN_INNER, half - EDGE);
+    const n = this.order.length;
+
+    // Fit as many per side as the column allows, squeezing the gap before giving up.
+    let perSide = Math.ceil(n / 2);
+    let inner = Math.min(INNER, outer);
+    let gap = perSide > 1 ? Math.min(GAP, (outer - inner) / (perSide - 1)) : 0;
+    if (perSide > 1 && gap < MIN_GAP) {
+      inner = Math.max(MIN_INNER, outer - MIN_GAP * (perSide - 1));
+      gap = (outer - inner) / (perSide - 1);
+      if (gap < MIN_GAP) {
+        perSide = Math.floor((outer - MIN_INNER) / MIN_GAP) + 1;
+        inner = MIN_INNER;
+        gap = MIN_GAP;
+      }
+    }
+    const visible = Math.min(n, perSide * 2);
+
+    const w = 88 * unit * SCALE;
+    const h = 204 * unit * SCALE;
+    this.order.forEach((id, i) => {
+      const item = this.items.get(id);
+      if (!item) return;
+      const k = Math.floor(i / 2);
+      const side = i % 2 ? 1 : -1;
+      const x = side * (inner + k * gap) * unit;
+      // When it gets crowded every other slot kneels a step further back, so a big team reads as rows.
+      const back = gap < GAP && k % 2 === 1;
+      const y = back ? -42 * unit : 0;
+      const depth = (back ? 0.8 : 1) - k * 0.02;
+      Object.assign(item.el.style, { width: `${w}px`, height: `${h}px`, zIndex: String(back ? 10 - k : 20 - k) });
+      item.el.style.setProperty('--lift', k % 2 ? '24px' : '0px'); // neighbours' name tags never collide
+      item.el.hidden = i >= visible;
+      const to = { x: x - w / 2, y, scale: depth, transformOrigin: '50% 100%' };
+      if (!item.placed) {
+        item.placed = true;
+        gsap.set(item.el, { ...to, y: y + 24, opacity: 0 });
+        gsap.to(item.el, { y, opacity: 1, duration: 0.9, ease: 'power3.out' });
+      } else {
+        gsap.to(item.el, { ...to, duration: 0.8, ease: 'power3.inOut' });
+      }
+    });
+
+    this.more.hidden = n <= visible;
+    this.more.textContent = `+${n - visible}`;
+  }
+
+  /** Where someone kneels, for things that should come from them. */
+  element(id) {
+    const item = this.items.get(id);
+    return item && !item.el.hidden ? item.el : null;
+  }
+
+  bow(id, times = 1) {
+    const item = this.items.get(id);
+    if (!item) return;
+    gsap.timeline({ repeat: times - 1 })
+      .to(item.upper, { scaleY: 0.52, y: 4, svgOrigin: '0 -30', duration: 0.55, ease: 'power2.inOut' })
+      .to(item.upper, { scaleY: 1, y: 0, svgOrigin: '0 -30', duration: 0.8, ease: 'power2.inOut' }, '+=0.25');
+  }
+
+  /** A little hop and a flare of their incense: they just did something. */
+  nudge(id) {
+    const item = this.items.get(id);
+    if (!item) return;
+    gsap.fromTo(item.el.querySelector('.kneeler__tag'), { y: -6 }, { y: 0, duration: 0.6, ease: 'bounce.out' });
+    gsap.fromTo(item.halo, { opacity: 0.9, attr: { r: 16 } }, { opacity: this.lit ? 0.45 : 0, attr: { r: 7 }, duration: 1.2, ease: 'power2.out' });
+  }
+
+  setLit(lit) {
+    this.lit = lit;
+    for (const item of this.items.values()) this.glow(item, lit);
+  }
+
+  glow(item, on) {
+    gsap.killTweensOf([item.ember, item.halo]);
+    if (!on) { gsap.to([item.ember, item.halo], { opacity: 0, duration: 1 }); return; }
+    gsap.to(item.ember, { opacity: 1, duration: 0.6 });
+    gsap.to(item.halo, { opacity: 0.45, duration: 0.6 });
+    gsap.to(item.ember, { opacity: 0.5, duration: gsap.utils.random(0.5, 0.9), yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 0.6 });
+  }
+}

@@ -29,6 +29,15 @@ shrine.
 
 - **Shared altar**: everyone sees and hears every action, and the activity
   feed shows who did what (repeats fold into "rang the bowl ×3").
+- **The congregation**: everyone in the room kneels in front of the altar with
+  their name above them, in rows when the team is big. They bow when they
+  bow, and their prayer lanterns rise from where they kneel.
+- **Rack 42 vitals**: a heart monitor that flatlines while the incense is cold
+  and beats faster with more people and more devotion.
+- **Atmosphere**: a camera push down the server corridor on load, light rays
+  and dust over the altar, red paper lanterns, sparks when the incense
+  catches, golden shockwaves across the floor when the bowl rings, and the
+  whole room warming up while it burns.
 - **Drawn, not downloaded**: the incense burner is inline SVG (the sticks
   really burn down), the server room is procedural, the smoke is painted at
   runtime, and the ambient music is synthesized in the browser.
@@ -83,6 +92,10 @@ src/smoke.js        incense smoke particles (runtime sprite)
 src/fog.js          ambient fog
 src/petals.js       falling petals (GSAP)
 src/lanterns.js     prayer lanterns (GSAP)
+src/congregation.js teammates kneeling at the altar
+src/motes.js        dust in the light, sparks
+src/hanging.js      red paper lanterns
+src/vitals.js       rack 42 heart monitor
 src/config.js       settings: URL params > localStorage > defaults
 src/strings.js      brand name, copy and mantras
 src/styles.css      design tokens, themes, layout

@@ -321,6 +321,11 @@ export function buildBurner(host) {
       });
     },
 
+    /** Show or hide the two built-in ops-team devotees (rooms show the real people instead). */
+    setOpsTeam(show) {
+      svg.querySelectorAll('.devotee').forEach((d) => { d.style.display = show ? '' : 'none'; });
+    },
+
     /** Jump the burn to `elapsed` seconds in (late joiners, or a tab that was asleep). */
     syncBurn(elapsed) {
       burnTl?.time(Math.max(0, elapsed));

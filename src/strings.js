@@ -24,7 +24,7 @@ export const STRINGS = {
   soloCta: 'Open a team shrine',
   feedLabel: 'Activity',
   feedEmpty: 'Quiet so far. Light the incense to begin.',
-  altarLabel: 'Altar',
+  vitalsLabel: 'Rack 42 vitals',
   cold: 'Incense is cold',
   lit: 'Incense burning',
   left: 'left',

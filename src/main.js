@@ -9,6 +9,10 @@ import { Fog } from './fog.js';
 import { Petals } from './petals.js';
 import { releaseLantern } from './lanterns.js';
 import { roomFromPath, connectRoom, loadMe, saveMe, AVATARS } from './room.js';
+import { Congregation } from './congregation.js';
+import { Motes } from './motes.js';
+import { Vitals } from './vitals.js';
+import { buildHanging } from './hanging.js';
 
 const $ = (sel) => document.querySelector(sel);
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -48,11 +52,16 @@ const art = buildBurner($('#burner-art'));
 const smoke = new IncenseSmoke($('#smoke'), () => art.tips());
 const fog = new Fog($('#fog'));
 const petals = new Petals($('#petals'));
+const motes = new Motes($('#motes'));
+const hanging = buildHanging($('#hang'));
+const congregation = new Congregation($('#congregation'), burner);
+const vitals = new Vitals($('#ekg'), $('#vitals-bpm'));
 const BURN_SECONDS = 600; // keep in sync with worker/shrine.js
 
 /* ---------- Apply settings ---------- */
 function applySettings(animate = false) {
   body.dataset.theme = settings.theme;
+  motes.syncColor();
   applyStrings({ title: settings.title, subtitle: settings.subtitle });
   document.title = `${settings.title || t('title')} · ${BRAND}`;
   if (roomName) $('#eyebrow').textContent = fmt('roomEyebrow', { room: roomName });
@@ -116,6 +125,11 @@ function intro() {
   gsap.set(dock, { y: 24, opacity: 0 });
   gsap.set('.burner', { y: 60, opacity: 0, scale: 0.92 });
 
+  // Camera pushes down the server corridor, the lanterns drop, the light comes up.
+  gsap.fromTo('.layer--bg', { scale: 1.35, opacity: 0 }, { scale: 1, opacity: 1, duration: 3.6, ease: 'power2.out' });
+  gsap.from('.hang', { y: '-45vh', duration: 2.2, ease: 'back.out(1.2)', stagger: 0.15, delay: 0.6 });
+  gsap.from('#rays', { opacity: 0, duration: 3, delay: 1 });
+
   gsap.timeline({ defaults: { ease: 'power3.out' } })
     .to('.bar', { y: 0, opacity: 1, duration: 0.8 }, 0.1)
     .to('.eyebrow', { y: 0, opacity: 1, duration: 0.7 }, 0.25)
@@ -149,6 +163,23 @@ function parallax() {
     if (!light.dataset.on) { light.dataset.on = '1'; gsap.to(light, { opacity: 1, duration: 1.2 }); }
   }, { passive: true });
 }
+
+/* ---------- Light shimmer ---------- */
+gsap.utils.toArray('.ray').forEach((ray) => {
+  gsap.to(ray, { opacity: () => gsap.utils.random(0.45, 1), duration: () => gsap.utils.random(2, 4.5), repeat: -1, repeatRefresh: true, yoyo: true, ease: 'sine.inOut' });
+});
+
+/* ---------- Rack 42's heart rate: flat while cold, faster with more people and more devotion ---------- */
+let devotion = 0;
+function kick(amount, strength = 1) {
+  devotion = Math.min(60, devotion + amount);
+  vitals.kick(strength);
+}
+setInterval(() => {
+  devotion *= 0.93;
+  const crowd = Math.max(1, people.size);
+  vitals.setBpm(lit ? Math.min(160, 58 + (crowd - 1) * 7 + devotion) : 0);
+}, 1000);
 
 /* ---------- Mantras ---------- */
 function startMantras() {
@@ -330,6 +361,7 @@ function light() {
     bump(statIncense);
   }
   ignite(Date.now());
+  if (myId) congregation.bow(myId, 3);
   logMine('light', t('fLight'), { toastText: t('litToast') });
 }
 
@@ -347,12 +379,20 @@ function ignite(at) {
   if (!fresh) art.syncBurn(elapsed);
   smoke.start();
   petals.rate = 1.4;
+  congregation.setLit(true);
+  motes.setLit(true);
+  hanging.setLit(true);
   tickProgress();
 
   if (fresh) {
     sound.lighter();
     gsap.delayedCall(0.9, () => sound.bowl(196));
     petals.burst(24);
+    kick(20, 1.2);
+    // sparks fly off the sticks as they catch, and the light from above flares
+    gsap.delayedCall(0.5, () => art.tips().forEach((tip) => motes.burst(tip.x, tip.y, 26)));
+    gsap.fromTo('#rays', { filter: 'brightness(2.4)' }, { filter: 'brightness(1)', duration: 2.4, ease: 'power2.out' });
+    shockwave();
     // Flash + shake of the burner, like a flame catching
     gsap.timeline()
       .to('.burner', { scale: 1.04, duration: 0.15, ease: 'power2.out' })
@@ -382,6 +422,9 @@ function burnOut() {
   burnBar.style.width = '0%';
   art.extinguish();
   smoke.stop();
+  congregation.setLit(false);
+  motes.setLit(false);
+  hanging.setLit(false);
   if (shrine) shrine.send('burnout');
   else addKarma(10);
   const what = t(roomName ? 'fBurnout' : 'fBurnoutSolo');
@@ -407,33 +450,39 @@ function ringBowl() {
 function bowlFx(note) {
   sound.bowl(note);
   room.pulse();
+  shockwave();
+  hanging.gust();
+  kick(4);
+  gsap.fromTo($('#btn-bowl').querySelector('.act__icon'), { rotation: -20 }, { rotation: 0, duration: 1, ease: 'elastic.out(1, 0.3)' });
+  gsap.fromTo('.scene', { scale: 1.012 }, { scale: 1, duration: 1.2, ease: 'power2.out' });
+}
 
-  // Ripple ring from the bowl button
-  const btn = $('#btn-bowl');
-  const r = btn.getBoundingClientRect();
-  const ring = document.createElement('span');
-  Object.assign(ring.style, {
-    position: 'fixed', left: `${r.left + r.width / 2}px`, top: `${r.top + r.height / 2}px`,
-    width: '20px', height: '20px', marginLeft: '-10px', marginTop: '-10px',
-    borderRadius: '50%', border: '1px solid rgb(var(--accent-rgb) / 0.8)', pointerEvents: 'none', zIndex: 10,
-  });
-  document.body.appendChild(ring);
-  gsap.to(ring, { scale: 40, opacity: 0, duration: 2.6, ease: 'power2.out', onComplete: () => ring.remove() });
-  gsap.fromTo(btn.querySelector('.act__icon'), { rotation: -20 }, { rotation: 0, duration: 1, ease: 'elastic.out(1, 0.3)' });
-  gsap.fromTo('.scene', { scale: 1.01 }, { scale: 1, duration: 1.2, ease: 'power2.out' });
+/** Golden rings roll out across the floor from the foot of the altar. */
+function shockwave() {
+  if (reduceMotion) return;
+  const floor = $('#floor');
+  for (let i = 0; i < 3; i++) {
+    const ring = document.createElement('span');
+    ring.className = 'shock';
+    floor.appendChild(ring);
+    gsap.fromTo(ring, { scale: 0.3, opacity: 0.95 }, { scale: 4.5 + i * 1.6, opacity: 0, duration: 2 + i * 0.5, delay: i * 0.16, ease: 'power2.out', onComplete: () => ring.remove() });
+  }
 }
 
 /* ---------- Bow + offerings ---------- */
 function bow() {
   sound.unlock();
-  bowFx();
+  bowFx(myId);
   addKarma(2);
   logMine('bow', t('fBow'), { toastText: t('bowed') });
   shrine?.send('bow');
 }
 
-function bowFx() {
-  art.bow(1);
+/** Someone bows: their figure if they kneel in the room, otherwise the ops team. */
+function bowFx(id) {
+  if (id && roomName) congregation.bow(id);
+  else art.bow(1);
+  kick(6);
   sound.tick(392, 0.07);
   gsap.delayedCall(0.5, () => sound.bowl(147));
   gsap.fromTo('.heading', { y: 0 }, { y: 6, duration: 0.5, yoyo: true, repeat: 1, ease: 'sine.inOut' });
@@ -453,6 +502,7 @@ function offer() {
 
 function offerFx(kind) {
   const label = art.offer(kind);
+  kick(8);
   sound.whoosh();
   gsap.delayedCall(0.35, () => sound.tick(1046, 0.08));
   smoke.puff(0.6);
@@ -505,15 +555,16 @@ $('#wish-form').addEventListener('submit', (e) => {
   const text = input.value.trim();
   if (!text) { puff(); toast(t('wishEmpty')); return; }
   input.value = '';
-  prayerFx(text, roomName ? `${me?.avatar ?? ''} ${t('you')}` : '');
+  prayerFx(text, roomName ? `${me?.avatar ?? ''} ${t('you')}` : '', false, congregation.element(myId));
   addKarma(3);
   logMine('prayer', t('fPrayer'), { quote: text, toastText: t('wishSent') });
   shrine?.send('prayer', { text });
 });
 
-function prayerFx(text, author, quiet = false) {
-  releaseLantern($('#lanterns'), text, $('.pray'), author);
+function prayerFx(text, author, quiet = false, from = null) {
+  releaseLantern($('#lanterns'), text, from ?? $('.pray'), author);
   if (quiet) return;
+  kick(8);
   sound.whoosh();
   gsap.delayedCall(0.6, () => sound.bowl(261));
   petals.burst(8);
@@ -529,6 +580,7 @@ function puff() {
 
 function puffFx() {
   sound.tick(520, 0.08);
+  kick(2, 0.6);
   smoke.puff(1);
   gsap.fromTo('.burner', { rotation: -2 }, { rotation: 0, duration: 0.8, ease: 'elastic.out(1, 0.3)' });
 }
@@ -610,6 +662,7 @@ const roomStatus = $('#room-status');
 
 function enterRoom() {
   body.dataset.mode = 'room';
+  art.setOpsTeam(false);
   $('#btn-together').hidden = true;
   $('#btn-invite').hidden = false;
   $('#room-chip').hidden = false;
@@ -727,11 +780,11 @@ function onShrineMessage(msg) {
 
 function remoteAct({ kind, by, note, item, text }) {
   const log = (what, extra = {}) => logEvent({ key: `${by.id}:${kind}${item ? `:${item}` : ''}`, avatar: by.avatar, who: by.name, what, toastText: `${by.name} ${what}.`, ...extra });
-  if (kind === 'light') log(t('fLight'));
+  if (kind === 'light') { congregation.bow(by.id, 3); log(t('fLight')); }
   else if (kind === 'bowl') { bowlFx(note); log(t('fBowl')); }
-  else if (kind === 'bow') { bowFx(); log(t('fBow')); }
+  else if (kind === 'bow') { bowFx(by.id); log(t('fBow')); }
   else if (kind === 'offer') { const label = offerFx(item); if (label) log(fmt('fOffer', { item: label })); }
-  else if (kind === 'prayer') { prayerFx(text, `${by.avatar} ${by.name}`); log(t('fPrayer'), { quote: text, toastText: `${by.name}: “${text}”` }); }
+  else if (kind === 'prayer') { prayerFx(text, `${by.avatar} ${by.name}`, false, congregation.element(by.id)); log(t('fPrayer'), { quote: text, toastText: `${by.name}: “${text}”` }); }
   else if (kind === 'puff') puffFx();
 }
 
@@ -784,6 +837,7 @@ function renderPeople(newId) {
     if (p.id === newId && !reduceMotion) gsap.from(li, { x: -12, opacity: 0, duration: 0.5, ease: 'power3.out' });
   }
   peopleCount.textContent = list.length;
+  congregation.set(list, myId);
 
   // Compact stack in the top bar.
   presence.innerHTML = '';
@@ -803,6 +857,7 @@ function renderPeople(newId) {
 
 /** Someone did something: their row glows and the action's icon floats off it. */
 function pingPerson(id, icon) {
+  congregation.nudge(id);
   const el = (feedVisible() && peopleList.querySelector(`[data-id="${id}"]`)) || presence.querySelector(`[data-id="${id}"]`);
   if (!el || reduceMotion) return;
   el.classList.add('is-ping');
