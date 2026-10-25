@@ -14,7 +14,10 @@
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Shrine"] }],
   "observability": {
     "enabled": true
-  }
-  // To serve on its own hostname (the zone must be on this Cloudflare account), add e.g.:
-  // "routes": [{ "pattern": "shrine.wotdafong.dev", "custom_domain": true }]
+  },
+  // Served only on its own hostname (the wotdafong.dev zone must be on this Cloudflare account):
+  // no *.workers.dev URL and no per-version preview URLs.
+  "routes": [{ "pattern": "shrine.wotdafong.dev", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false
 }

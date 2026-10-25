@@ -76,7 +76,9 @@ npx wrangler login # once
 npm run deploy
 ```
 
-To serve from your own hostname, add a `routes` entry to `wrangler.jsonc`.
+It deploys to https://shrine.wotdafong.dev as a Workers custom domain (the
+`wotdafong.dev` zone must be on the same Cloudflare account). The
+`*.workers.dev` URL and preview URLs are turned off in `wrangler.jsonc`.
 
 ## Project layout
 
