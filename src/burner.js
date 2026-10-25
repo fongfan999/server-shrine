@@ -23,30 +23,44 @@ const SLOTS = [148, 186, 334, 372]; // x positions for offerings on the table
 /* ---------- offerings: small vector icons, drawn with their base at (0,0) ---------- */
 export const OFFERINGS = {
   energy: {
+    emoji: '🥤',
+    short: 'Energy drink',
     label: 'an energy drink',
     svg: `<rect x="-8" y="-34" width="16" height="34" rx="3" fill="#1d2a3d"/><rect x="-8" y="-34" width="16" height="4" fill="#9fb3c8"/><rect x="-8" y="-22" width="16" height="9" fill="#2bb7ff"/><path d="M-2 -21 l4 -0 l-2 4 l3 0 l-5 6 l1 -4 l-3 0 z" fill="#ffd34d"/><rect x="-6" y="-33" width="3" height="30" fill="#fff" opacity="0.12"/>`,
   },
   noodles: {
+    emoji: '🍜',
+    short: 'Instant noodles',
     label: 'a cup of instant noodles',
     svg: `<path d="M-13 -30 L13 -30 L10 0 L-10 0 Z" fill="#f4efe6"/><path d="M-13 -30 L13 -30 L12 -22 L-12 -22 Z" fill="#d8202e"/><ellipse cx="0" cy="-30" rx="13" ry="3.5" fill="#fff"/><path d="M-6 -16 h12 M-5 -10 h10" stroke="#d8202e" stroke-width="1.5"/>`,
   },
   duck: {
+    emoji: '🦆',
+    short: 'Rubber duck',
     label: 'a rubber duck',
     svg: `<ellipse cx="0" cy="-9" rx="13" ry="9" fill="#ffd21f"/><circle cx="7" cy="-20" r="7.5" fill="#ffd21f"/><path d="M13 -20 l8 2 l-8 3 z" fill="#ff8a1f"/><circle cx="9" cy="-22" r="1.4" fill="#1a1206"/><path d="M-12 -12 q-5 -4 -2 -8" stroke="#ffd21f" stroke-width="4" fill="none" stroke-linecap="round"/>`,
   },
   coffee: {
+    emoji: '☕',
+    short: 'Coffee',
     label: 'a cup of coffee',
     svg: `<path d="M-10 -22 L10 -22 L8 0 L-8 0 Z" fill="#f4efe6"/><path d="M10 -18 q8 0 6 8 q-2 6 -8 5" stroke="#f4efe6" stroke-width="3" fill="none"/><path d="M-10 -22 L10 -22 L9.5 -17 L-9.5 -17 Z" fill="#6b3a1e"/><path d="M-3 -28 q2 -4 0 -8 M3 -28 q2 -4 0 -8" stroke="#fff" stroke-opacity="0.5" stroke-width="1.5" fill="none" stroke-linecap="round"/>`,
   },
   keyboard: {
+    emoji: '⌨️',
+    short: 'Mech keyboard',
     label: 'a mechanical keyboard',
     svg: `<rect x="-22" y="-10" width="44" height="10" rx="2" fill="#2b2f3a"/><g fill="#8a93a6">${[...Array(8)].map((_, i) => `<rect x="${-19 + i * 5}" y="-8" width="3" height="2.4" rx="0.5"/>`).join('')}${[...Array(8)].map((_, i) => `<rect x="${-19 + i * 5}" y="-4.5" width="3" height="2.4" rx="0.5"/>`).join('')}</g><rect x="-6" y="-8" width="3" height="2.4" rx="0.5" fill="#3fb4ff"/>`,
   },
   usb: {
+    emoji: '💾',
+    short: 'The backups',
     label: 'a USB stick with the backups',
     svg: `<rect x="-5" y="-24" width="10" height="20" rx="2" fill="#2d6cdf"/><rect x="-4" y="-30" width="8" height="7" fill="#c7ced9"/><rect x="-2.5" y="-29" width="5" height="1.5" fill="#55606e"/><rect x="-2.5" y="-26" width="5" height="1.5" fill="#55606e"/><circle cx="0" cy="-12" r="1.6" fill="#9ad0ff"/>`,
   },
   laptop: {
+    emoji: '💻',
+    short: 'Sticker laptop',
     label: 'a laptop covered in stickers',
     svg: `<rect x="-18" y="-24" width="36" height="22" rx="2" fill="#2b2f3a"/><rect x="-16" y="-22" width="32" height="18" fill="#0f141c"/><rect x="-20" y="-3" width="40" height="3" rx="1" fill="#3a3f4b"/><circle cx="-8" cy="-12" r="3" fill="#ff5d73"/><rect x="2" y="-16" width="7" height="7" rx="1" fill="#7dffc8" transform="rotate(15 5 -12)"/><circle cx="8" cy="-8" r="2" fill="#ffd166"/>`,
   },
@@ -131,10 +145,31 @@ export function buildBurner(host) {
     </filter>
     <filter id="bSoft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="8"/></filter>
     <filter id="bSofter" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
+    <!-- the mask lives in the reflection's flipped space: local y 452 is the floor line, local y 288 is the far end -->
+    <linearGradient id="bReflFade" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.95"/>
+      <stop offset="0.5" stop-color="#fff" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <mask id="bReflMask"><rect x="0" y="288" width="520" height="164" fill="url(#bReflFade)"/></mask>
     <clipPath id="bBodyClip">
       <path d="M 150 ${RIM_Y + 4} C 112 322, 168 380, 260 380 C 352 380, 408 322, 370 ${RIM_Y + 4} Z"/>
     </clipPath>
   </defs>
+
+  <!-- the table and candles mirrored in the polished floor -->
+  <g class="reflection" mask="url(#bReflMask)" opacity="0.55" transform="matrix(1 0 0 -0.45 0 655.4)">
+    <rect x="22" y="${TABLE_Y}" width="476" height="18" rx="4" fill="url(#bWood)"/>
+    <rect x="40" y="416" width="18" height="34" rx="3" fill="#1c0c05"/>
+    <rect x="462" y="416" width="18" height="34" rx="3" fill="#1c0c05"/>
+    <rect x="30" y="414" width="460" height="6" rx="2" fill="#0d0603"/>
+    <path d="M 150 ${TABLE_Y} L 370 ${TABLE_Y} L 384 428 Q 260 444 136 428 Z" fill="url(#bSilk)"/>
+    <ellipse cx="260" cy="404" rx="90" ry="10" fill="#ffb347" opacity="0.35"/>
+    ${CANDLES.map((c) => `
+    <ellipse cx="${c.x}" cy="396" rx="20" ry="6" fill="url(#bGoldLine)"/>
+    <rect x="${c.x - 11}" y="322" width="22" height="74" rx="3" fill="url(#bCandle)"/>
+    <path class="rflame" d="M ${c.x} 288 C ${c.x + 7} 298, ${c.x + 8} 310, ${c.x} 318 C ${c.x - 8} 310, ${c.x - 7} 298, ${c.x} 288 Z" fill="url(#bFlame)"/>`).join('')}
+  </g>
 
   <!-- table -->
   <g class="altar-table">
@@ -236,19 +271,19 @@ export function buildBurner(host) {
     <ellipse cx="0" cy="-2" rx="34" ry="7" fill="#000" opacity="0.5" filter="url(#bSoft)"/>
     <!-- legs folded under -->
     <path d="M -30 0 Q -32 -24 -12 -30 L 14 -30 Q 32 -24 30 0 Z" fill="#06080c"/>
-    <path d="M -30 0 Q -32 -24 -12 -30" stroke="#3fb4ff" stroke-opacity="0.18" stroke-width="2" fill="none"/>
+    <path d="M -30 0 Q -32 -24 -12 -30" class="rim" stroke-opacity="0.18" stroke-width="2" fill="none"/>
     <g class="devotee__upper" style="transform-origin: 0px -30px">
       <!-- torso -->
       <path d="M -22 -30 L -24 -92 Q 0 -104 24 -92 L 22 -30 Z" fill="url(#bBody)"/>
-      <path d="M -24 -92 Q 0 -104 24 -92" stroke="#3fb4ff" stroke-opacity="0.35" stroke-width="2" fill="none"/>
-      <path d="M -22 -30 L -24 -92" stroke="#3fb4ff" stroke-opacity="0.12" stroke-width="2" fill="none"/>
+      <path d="M -24 -92 Q 0 -104 24 -92" class="rim" stroke-opacity="0.35" stroke-width="2" fill="none"/>
+      <path d="M -22 -30 L -24 -92" class="rim" stroke-opacity="0.12" stroke-width="2" fill="none"/>
       <!-- arms up, palms together -->
       <path d="M -20 -86 Q -30 -118 -8 -140 L 0 -146" stroke="#06080c" stroke-width="11" stroke-linecap="round" fill="none"/>
       <path d="M 20 -86 Q 30 -118 8 -140 L 0 -146" stroke="#06080c" stroke-width="11" stroke-linecap="round" fill="none"/>
-      <path d="M -8 -140 L 0 -146" stroke="#3fb4ff" stroke-opacity="0.25" stroke-width="2" fill="none"/>
+      <path d="M -8 -140 L 0 -146" class="rim" stroke-opacity="0.25" stroke-width="2" fill="none"/>
       <!-- head -->
       <circle cx="0" cy="-110" r="15" fill="#06080c"/>
-      <path d="M -13 -116 Q 0 -128 13 -116" stroke="#3fb4ff" stroke-opacity="0.3" stroke-width="2" fill="none"/>
+      <path d="M -13 -116 Q 0 -128 13 -116" class="rim" stroke-opacity="0.3" stroke-width="2" fill="none"/>
       <!-- incense held in the hands -->
       <rect x="-1.2" y="-182" width="2.4" height="38" fill="#b57a50"/>
       <circle class="devotee__ember" cx="0" cy="-182" r="2.6" fill="#fff0c0" filter="url(#bGlow)" opacity="0"/>

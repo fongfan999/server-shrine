@@ -13,6 +13,7 @@ import { Congregation } from './congregation.js';
 import { Motes } from './motes.js';
 import { Vitals } from './vitals.js';
 import { buildHanging } from './hanging.js';
+import { WishBoard } from './ema.js';
 
 const $ = (sel) => document.querySelector(sel);
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -56,6 +57,7 @@ const motes = new Motes($('#motes'));
 const hanging = buildHanging($('#hang'));
 const congregation = new Congregation($('#congregation'), burner);
 const vitals = new Vitals($('#ekg'), $('#vitals-bpm'));
+const wishes = new WishBoard($('#ema'));
 const BURN_SECONDS = 600; // keep in sync with worker/shrine.js
 
 /* ---------- Apply settings ---------- */
@@ -117,7 +119,7 @@ function splitTitle(replay = false) {
 
 function intro() {
   if (reduceMotion) return;
-  const dock = ['.pray', '.actions', '.credit'];
+  const dock = ['.quick', '.pray', '.actions', '.credit'];
   gsap.set('.title .ch', { y: 40, opacity: 0, rotateX: -70, transformOrigin: '50% 100%' });
   gsap.set(['.eyebrow', '.subtitle', '.mantra'], { y: 14, opacity: 0 });
   gsap.set('.bar', { y: -12, opacity: 0 });
@@ -175,10 +177,17 @@ function kick(amount, strength = 1) {
   devotion = Math.min(60, devotion + amount);
   vitals.kick(strength);
 }
+const moodEl = $('#vitals-mood');
 setInterval(() => {
   devotion *= 0.93;
   const crowd = Math.max(1, people.size);
-  vitals.setBpm(lit ? Math.min(160, 58 + (crowd - 1) * 7 + devotion) : 0);
+  const bpm = lit ? Math.min(160, 58 + (crowd - 1) * 7 + devotion) : 0;
+  vitals.setBpm(bpm);
+  const face = !bpm ? '💀' : bpm < 72 ? '😵‍💫' : bpm < 95 ? '🙂' : bpm < 125 ? '😌' : '🔥';
+  if (moodEl.textContent !== face) {
+    moodEl.textContent = face;
+    if (!reduceMotion) gsap.fromTo(moodEl, { scale: 1.5 }, { scale: 1, duration: 0.7, ease: 'elastic.out(1, 0.5)' });
+  }
 }, 1000);
 
 /* ---------- Mantras ---------- */
@@ -291,9 +300,34 @@ const burnTime = $('#burning-time');
 const burnBar = $('#burn-bar');
 const dockTime = $('#dock-time');
 
-function updateStats() {
+function updateStats(quiet = false) {
   statIncense.textContent = counters.incense;
   statKarma.textContent = counters.karma;
+  updateRank(quiet);
+}
+
+/* ---------- Ranks: karma turns a lurker into an enlightened SRE ---------- */
+const rankName = $('#rank-name');
+const rankNext = $('#rank-next');
+const rankBadge = $('#rank-badge');
+const rankBar = $('#rank-bar');
+let shownRank = -1;
+function updateRank(quiet) {
+  const ranks = STRINGS.ranks;
+  const i = ranks.reduce((idx, [at], k) => (counters.karma >= at ? k : idx), 0);
+  const [at, name, badge] = ranks[i];
+  const next = ranks[i + 1];
+  rankName.textContent = name;
+  rankBadge.textContent = badge;
+  rankNext.textContent = next ? fmt('toNext', { n: next[0] - counters.karma, rank: next[1] }) : t('maxRank');
+  rankBar.style.width = next ? `${((counters.karma - at) / (next[0] - at)) * 100}%` : '100%';
+  const promoted = shownRank !== -1 && i > shownRank && !quiet;
+  shownRank = i;
+  if (!promoted) return;
+  toast(`${badge} ${fmt('promoted', { rank: name })}`);
+  sound.bowl(329);
+  petals.burst(30);
+  if (!reduceMotion) gsap.fromTo('.rank', { scale: 1.06 }, { scale: 1, duration: 0.9, ease: 'elastic.out(1, 0.45)', transformOrigin: '0% 50%' });
 }
 
 function bump(el) {
@@ -448,13 +482,46 @@ function ringBowl() {
 }
 
 function bowlFx(note) {
-  sound.bowl(note);
+  comboHit();
+  // every ring in a combo sits a little higher than the last
+  sound.bowl(note * 2 ** (Math.min(combo, 12) / 24));
   room.pulse();
   shockwave();
   hanging.gust();
   kick(4);
   gsap.fromTo($('#btn-bowl').querySelector('.act__icon'), { rotation: -20 }, { rotation: 0, duration: 1, ease: 'elastic.out(1, 0.3)' });
   gsap.fromTo('.scene', { scale: 1.012 }, { scale: 1, duration: 1.2, ease: 'power2.out' });
+}
+
+/* ---------- Bowl combos: ring fast (or together) and the rack starts to notice ---------- */
+const comboEl = $('#combo');
+const bowlBtn = $('#btn-bowl');
+let combo = 0;
+let comboAt = 0;
+let comboTimer = 0;
+gsap.set(comboEl, { xPercent: -50, yPercent: -100 });
+function comboHit() {
+  const now = Date.now();
+  combo = now - comboAt < 2200 ? combo + 1 : 1;
+  comboAt = now;
+  clearTimeout(comboTimer);
+  comboTimer = setTimeout(comboEnd, 2200);
+  if (combo < 2) return;
+  const r = bowlBtn.getBoundingClientRect();
+  Object.assign(comboEl.style, { left: `${r.left + r.width / 2}px`, top: `${r.top - 6}px` });
+  comboEl.querySelector('.combo__n').textContent = `×${combo}`;
+  comboEl.querySelector('.combo__cap').textContent = STRINGS.comboCaptions.reduce((c, [at, text]) => (combo >= at ? text : c), '');
+  comboEl.dataset.heat = String(Math.min(4, Math.floor(combo / 5)));
+  comboEl.hidden = false;
+  gsap.fromTo(comboEl, { scale: 1.3, opacity: 1, y: 0 }, { scale: 1, duration: 0.5, ease: 'elastic.out(1, 0.4)', overwrite: true });
+  if (STRINGS.comboCaptions.some(([at]) => at === combo)) {
+    petals.burst(6 + combo);
+    if (combo >= 10) { shockwave(); gsap.fromTo('#rays', { filter: 'brightness(1.8)' }, { filter: 'brightness(1)', duration: 1.6 }); }
+  }
+}
+function comboEnd() {
+  combo = 0;
+  gsap.to(comboEl, { opacity: 0, y: -24, duration: 0.5, ease: 'power2.in', overwrite: true, onComplete: () => { comboEl.hidden = true; } });
 }
 
 /** Golden rings roll out across the floor from the foot of the altar. */
@@ -489,10 +556,10 @@ function bowFx(id) {
 }
 
 let lastOffering = null;
-function offer() {
+/** Offer `kind`, or let fate decide (never the same thing twice in a row). */
+function offer(kind = null) {
   sound.unlock();
-  const kinds = Object.keys(OFFERINGS).filter((k) => k !== lastOffering);
-  const kind = gsap.utils.random(kinds);
+  if (!OFFERINGS[kind]) kind = gsap.utils.random(Object.keys(OFFERINGS).filter((k) => k !== lastOffering));
   lastOffering = kind;
   const label = offerFx(kind);
   addKarma(3);
@@ -509,6 +576,52 @@ function offerFx(kind) {
   gsap.fromTo('.burner', { scale: 1 }, { scale: 1.02, duration: 0.25, yoyo: true, repeat: 1, ease: 'sine.inOut' });
   return label;
 }
+
+/* ---------- The offering tray: pick what the servers get ---------- */
+const tray = $('#tray');
+const offerBtn = $('#btn-offer');
+let trayOpen = false;
+function buildTray() {
+  tray.innerHTML = '';
+  const title = document.createElement('p');
+  title.className = 'tray__title';
+  title.textContent = t('trayTitle');
+  const grid = document.createElement('div');
+  grid.className = 'tray__grid';
+  const item = (kind, emoji, name) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tray__item' + (kind ? '' : ' tray__item--random');
+    b.dataset.kind = kind;
+    b.innerHTML = '<span class="tray__emoji" aria-hidden="true"></span><span class="tray__name"></span>';
+    b.querySelector('.tray__emoji').textContent = emoji;
+    b.querySelector('.tray__name').textContent = name;
+    grid.appendChild(b);
+  };
+  for (const [kind, def] of Object.entries(OFFERINGS)) item(kind, def.emoji, def.short);
+  item('', '🎲', t('surprise'));
+  tray.append(title, grid);
+}
+function openTray(open) {
+  if (open === trayOpen) return;
+  trayOpen = open;
+  offerBtn.setAttribute('aria-expanded', String(open));
+  if (open) {
+    tray.hidden = false;
+    sound.tick(700, 0.05);
+    gsap.fromTo(tray, { y: 12, opacity: 0, scale: 0.96 }, { y: 0, opacity: 1, scale: 1, duration: 0.35, ease: 'power3.out', overwrite: true });
+    if (!reduceMotion) gsap.fromTo('.tray__item', { y: 8, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, stagger: 0.03, ease: 'power3.out', overwrite: true });
+  } else {
+    gsap.to(tray, { y: 8, opacity: 0, duration: 0.2, ease: 'power2.in', overwrite: true, onComplete: () => { tray.hidden = true; } });
+  }
+}
+tray.addEventListener('click', (e) => {
+  const b = e.target.closest('.tray__item');
+  if (!b) return;
+  openTray(false);
+  offer(b.dataset.kind || null);
+});
+document.addEventListener('pointerdown', (e) => { if (trayOpen && !e.target.closest('#tray, #btn-offer')) openTray(false); });
 
 /* ---------- Breathing guide ---------- */
 const breathEl = $('#breath');
@@ -548,17 +661,43 @@ function stopBreathing() {
 }
 
 /* ---------- Prayers ---------- */
+const wishInput = $('#wish-input');
 $('#wish-form').addEventListener('submit', (e) => {
   e.preventDefault();
   sound.unlock();
-  const input = $('#wish-input');
-  const text = input.value.trim();
+  const text = wishInput.value.trim();
   if (!text) { puff(); toast(t('wishEmpty')); return; }
-  input.value = '';
+  wishInput.value = '';
+  sendPrayer(text);
+});
+
+function sendPrayer(text) {
   prayerFx(text, roomName ? `${me?.avatar ?? ''} ${t('you')}` : '', false, congregation.element(myId));
+  wishes.hang(text, roomName ? me?.name ?? '' : '');
   addKarma(3);
   logMine('prayer', t('fPrayer'), { quote: text, toastText: t('wishSent') });
   shrine?.send('prayer', { text });
+}
+
+/* ---------- Quick prayers: three ready-made ones, reshuffled every time ---------- */
+const quick = $('#quick');
+function dealQuick() {
+  quick.innerHTML = '';
+  for (const text of gsap.utils.shuffle([...STRINGS.quickPrayers]).slice(0, 3)) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'quick__chip';
+    b.textContent = text;
+    quick.appendChild(b);
+  }
+  if (!reduceMotion) gsap.fromTo('.quick__chip', { y: 6, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, stagger: 0.05, ease: 'power3.out' });
+}
+quick.addEventListener('click', (e) => {
+  const b = e.target.closest('.quick__chip');
+  if (!b) return;
+  sound.unlock();
+  sendPrayer(b.textContent);
+  gsap.to(quick.children, { opacity: 0, y: -6, duration: 0.25, stagger: 0.03, onComplete: dealQuick });
 });
 
 function prayerFx(text, author, quiet = false, from = null) {
@@ -609,7 +748,7 @@ function openPanel(open) {
 $('#btn-settings').addEventListener('click', () => { sound.unlock(); openPanel(!panelOpen); });
 $('#btn-close-panel').addEventListener('click', () => openPanel(false));
 backdrop.addEventListener('click', () => openPanel(false));
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && panelOpen) openPanel(false); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (panelOpen) openPanel(false); openTray(false); } });
 
 panel.addEventListener('input', (e) => {
   const el = e.target;
@@ -742,6 +881,7 @@ function onShrineMessage(msg) {
         // Restore what is already on the altar, and the prayers said before we arrived.
         msg.offerings.forEach((kind, i) => gsap.delayedCall(1.6 + i * 0.25, () => art.offer(kind)));
         for (const p of msg.prayers) logEvent({ avatar: p.avatar, who: p.name, what: t('fPrayer'), quote: p.text, at: p.at });
+        msg.prayers.slice(-6).forEach((p, i) => gsap.delayedCall(1.2 + i * 0.12, () => wishes.hang(p.text, p.name, false)));
         msg.prayers.slice(-3).forEach((p, i) => gsap.delayedCall(2.4 + i * 1.8, () => prayerFx(p.text, `${p.avatar} ${p.name}`, true)));
       } else {
         toast(t('online'));
@@ -784,14 +924,14 @@ function remoteAct({ kind, by, note, item, text }) {
   else if (kind === 'bowl') { bowlFx(note); log(t('fBowl')); }
   else if (kind === 'bow') { bowFx(by.id); log(t('fBow')); }
   else if (kind === 'offer') { const label = offerFx(item); if (label) log(fmt('fOffer', { item: label })); }
-  else if (kind === 'prayer') { prayerFx(text, `${by.avatar} ${by.name}`, false, congregation.element(by.id)); log(t('fPrayer'), { quote: text, toastText: `${by.name}: “${text}”` }); }
+  else if (kind === 'prayer') { prayerFx(text, `${by.avatar} ${by.name}`, false, congregation.element(by.id)); wishes.hang(text, by.name); log(t('fPrayer'), { quote: text, toastText: `${by.name}: “${text}”` }); }
   else if (kind === 'puff') puffFx();
 }
 
 /** The shrine is the source of truth for the room's counters. */
 function syncCounters({ incense, karma }) {
   if (incense !== undefined && incense !== counters.incense) { counters.incense = incense; updateStats(); bump(statIncense); }
-  if (karma !== undefined && karma !== counters.karma) { counters.karma = karma; updateStats(); bump(statKarma); }
+  if (karma !== undefined && karma !== counters.karma) { counters.karma = karma; updateStats(!greeted); bump(statKarma); }
 }
 
 /** Match our altar to the shrine's: lit since `serverLitAt`, or out (0). */
@@ -906,7 +1046,7 @@ document.addEventListener('keydown', (e) => {
 $('#btn-light').addEventListener('click', light);
 $('#btn-bowl').addEventListener('click', ringBowl);
 $('#btn-bow').addEventListener('click', bow);
-$('#btn-offer').addEventListener('click', offer);
+offerBtn.addEventListener('click', () => { sound.unlock(); openTray(!trayOpen); });
 breathBtn.addEventListener('click', toggleBreathing);
 
 // The first interaction anywhere unlocks audio so music can start on the first click.
@@ -914,6 +1054,8 @@ document.addEventListener('pointerdown', () => sound.unlock(), { once: true });
 
 if (import.meta.env.DEV) window.__incense = { gsap, sound, smoke, fog, petals, get settings() { return settings; } };
 
+buildTray();
+dealQuick();
 applySettings();
 intro();
 parallax();

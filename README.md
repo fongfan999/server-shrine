@@ -8,6 +8,9 @@ Inspired by every "I haven't been able to reach the server for an hour" thread,
 and the classic photo of sysadmins praying to a rack with incense. A
 [Wot Da Fong](https://wotdafong.dev/) project.
 
+Open source at [github.com/fongfan999/server-shrine](https://github.com/fongfan999/server-shrine).
+Issues and pull requests are welcome.
+
 Built with [Vite](https://vite.dev), [GSAP](https://gsap.com) and the Web Audio
 API, running on [Cloudflare Workers](https://developers.cloudflare.com/workers/)
 with a [Durable Object](https://developers.cloudflare.com/durable-objects/) per
@@ -33,7 +36,19 @@ shrine.
   their name above them, in rows when the team is big. They bow when they
   bow, and their prayer lanterns rise from where they kneel.
 - **Rack 42 vitals**: a heart monitor that flatlines while the incense is cold
-  and beats faster with more people and more devotion.
+  and beats faster with more people and more devotion, with a mood face to
+  match.
+- **The offering tray**: pick what the servers get (energy drink, noodles,
+  rubber duck, the backups…) or roll the dice. `O` still offers at random.
+- **Quick prayers**: three ready-made prayers under the altar, reshuffled
+  every time you use one.
+- **The wish board**: every prayer also hangs on the altar as a wooden plaque,
+  and a shared shrine restores the last six for late joiners.
+- **Bowl combos**: ring fast, or ring together, and the combo counter climbs
+  from "the rack hears you" to "enlightenment achieved". Each ring in a combo
+  sits a little higher than the last.
+- **Ranks**: karma promotes you from lurker in #incidents to enlightened SRE,
+  with a toast and a shower of petals at every promotion.
 - **Atmosphere**: a camera push down the server corridor on load, light rays
   and dust over the altar, red paper lanterns, sparks when the incense
   catches, golden shockwaves across the floor when the bowl rings, and the

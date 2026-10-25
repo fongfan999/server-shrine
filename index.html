@@ -63,6 +63,9 @@
         <svg class="ico ico--on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7"/><path class="wave" d="M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>
         <svg class="ico ico--off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9l5 6M21 9l-5 6"/></svg>
       </button>
+      <a class="icon-btn" href="https://github.com/fongfan999/server-shrine" target="_blank" rel="noopener" aria-label="Source on GitHub" title="Open source on GitHub">
+        <svg class="ico ico--fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.58 2 12.24c0 4.52 2.87 8.36 6.84 9.71.5.1.68-.22.68-.49 0-.24-.01-.88-.01-1.73-2.78.62-3.37-1.21-3.37-1.21-.45-1.18-1.11-1.5-1.11-1.5-.91-.63.07-.62.07-.62 1 .07 1.53 1.05 1.53 1.05.89 1.57 2.34 1.12 2.91.85.09-.66.35-1.12.63-1.37-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05A9.4 9.4 0 0 1 12 6.96c.85 0 1.71.12 2.51.35 1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.48-.01 2.82 0 .27.18.59.69.49A10.25 10.25 0 0 0 22 12.24C22 6.58 17.52 2 12 2z"/></svg>
+      </a>
       <button class="icon-btn" id="btn-settings" type="button" aria-label="Customize" title="Customize">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
       </button>
@@ -105,6 +108,7 @@
       <div class="altar">
         <div class="altar__glow"></div>
         <div class="altar__floor" id="floor"></div>
+        <div class="ema" id="ema" aria-hidden="true"><span class="ema__rail"></span></div>
         <div class="burner" id="burner">
           <div class="burner__art" id="burner-art" role="img" aria-label="A bronze incense burner on an altar table, with candles and two kneeling engineers"></div>
         </div>
@@ -118,7 +122,7 @@
         <div class="vitals">
           <div class="burn__row">
             <h2 class="label" data-i18n="vitalsLabel">Rack 42 vitals</h2>
-            <span class="vitals__bpm" id="vitals-bpm">flatlining</span>
+            <span class="vitals__read"><span class="vitals__mood" id="vitals-mood" aria-hidden="true">💀</span><span class="vitals__bpm" id="vitals-bpm">flatlining</span></span>
           </div>
           <canvas class="vitals__ekg" id="ekg" aria-hidden="true"></canvas>
         </div>
@@ -134,6 +138,14 @@
           <div class="stat"><dt data-i18n="statKarma">Karma</dt><dd id="stat-karma">0</dd></div>
           <div class="stat"><dt data-i18n="statTime">In meditation</dt><dd id="stat-time">00:00</dd></div>
         </dl>
+        <div class="rank">
+          <span class="rank__badge" id="rank-badge" aria-hidden="true">👀</span>
+          <div class="rank__text">
+            <b class="rank__name" id="rank-name">Lurker in #incidents</b>
+            <span class="rank__next" id="rank-next"></span>
+            <div class="meter meter--thin"><div class="meter__bar meter__bar--soft" id="rank-bar"></div></div>
+          </div>
+        </div>
         <div class="enlight">
           <div class="burn__row">
             <span data-i18n="progressLabel">Enlightenment</span>
@@ -150,6 +162,7 @@
 
   <!-- Bottom: the action dock -->
   <footer class="dock">
+    <div class="quick" id="quick" aria-label="Quick prayers"></div>
     <form class="pray" id="wish-form" autocomplete="off">
       <label class="sr-only" for="wish-input" data-i18n="wishLabel">Say a prayer to the servers</label>
       <span class="pray__icon" aria-hidden="true">🏮</span>
@@ -171,16 +184,18 @@
         <span class="act__label act__label--lit"><span data-i18n="burning">Burning</span> <span id="dock-time">10:00</span></span>
         <kbd>L</kbd>
       </button>
-      <button class="act" id="btn-offer" type="button" title="Make an offering (O)">
+      <button class="act" id="btn-offer" type="button" title="Make an offering (O)" aria-haspopup="menu" aria-expanded="false" aria-controls="tray">
         <span class="act__icon" aria-hidden="true">🍜</span><span class="act__label" data-i18n="offer">Offer</span><kbd>O</kbd>
       </button>
       <button class="act" id="btn-breathe" type="button" aria-pressed="false" title="Breathe (Space)">
         <span class="act__icon" aria-hidden="true">🫁</span><span class="act__label" data-i18n="breathe">Breathe</span><kbd>␣</kbd>
       </button>
     </div>
+    <div class="tray" id="tray" role="menu" aria-label="Choose an offering" hidden></div>
     <p class="credit">
       <span class="hide-sm" data-i18n="tagline">Pray for uptime, together.</span>
       <a href="https://wotdafong.dev/" target="_blank" rel="noopener"><span data-i18n="madeBy">Made by</span> Wot Da Fong ↗</a>
+      <a href="https://github.com/fongfan999/server-shrine" target="_blank" rel="noopener"><span data-i18n="openSource">Open source</span> ↗</a>
     </p>
   </footer>
 
@@ -209,6 +224,7 @@
 
   <!-- Toast -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="combo" id="combo" aria-hidden="true" hidden><b class="combo__n">×2</b><span class="combo__cap"></span></div>
 
   <!-- Settings panel -->
   <aside class="panel" id="panel" aria-hidden="true" aria-label="Customize">
