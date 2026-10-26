@@ -40,6 +40,21 @@ function roomName() {
   return `${pick(ADJECTIVES)}-${pick(NOUNS)}-${Math.floor(Math.random() * 90 + 10)}`;
 }
 
+/** False when this IP has used up its share of `limiter`. Missing binding (e.g. tests) means no limit. */
+async function allowed(limiter, request) {
+  if (!limiter) return true;
+  const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
+  const { success } = await limiter.limit({ key: ip });
+  return success;
+}
+
+function tooMany() {
+  return new Response('Too many prayers at once. Breathe, then try again.', {
+    status: 429,
+    headers: { 'Content-Type': 'text/plain', 'Retry-After': '60', 'Cache-Control': 'no-store', ...SECURITY_HEADERS },
+  });
+}
+
 function json(data, init = {}) {
   return new Response(JSON.stringify(data, null, 2), {
     ...init,
@@ -74,6 +89,7 @@ export default {
     }
 
     if (url.pathname === '/new') {
+      if (!(await allowed(env.NEW_ROOM_LIMIT, request))) return tooMany();
       return Response.redirect(`${url.origin}/r/${roomName()}${url.search}`, 302);
     }
 
@@ -82,6 +98,7 @@ export default {
       const room = ws[1].toLowerCase();
       if (!ROOM_RE.test(room)) return json({ error: 'bad room name' }, { status: 400 });
       if (request.headers.get('Upgrade') !== 'websocket') return json({ error: 'expected a WebSocket' }, { status: 426 });
+      if (!(await allowed(env.SOCKET_LIMIT, request))) return json({ error: 'too many connections' }, { status: 429 });
       return env.SHRINE.get(env.SHRINE.idFromName(room)).fetch(request);
     }
 

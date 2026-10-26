@@ -32,8 +32,11 @@ export class Shrine extends DurableObject {
     super(ctx, env);
     this.state = { ...EMPTY };
     this.buckets = new WeakMap(); // per-socket rate limit; resets after hibernation, which is fine
+    this.stored = false; // nothing is written until the first action, so drive-by connects leave no trace
     ctx.blockConcurrencyWhile(async () => {
-      this.state = { ...EMPTY, ...(await ctx.storage.get('altar')) };
+      const saved = await ctx.storage.get('altar');
+      this.stored = saved !== undefined;
+      this.state = { ...EMPTY, ...saved };
     });
   }
 
@@ -64,7 +67,7 @@ export class Shrine extends DurableObject {
       prayers: this.state.prayers,
     }));
     this.broadcast({ t: 'join', person }, server);
-    await this.touch();
+    if (this.stored) await this.touch();
 
     return new Response(null, { status: 101, webSocket: client });
   }
@@ -136,6 +139,7 @@ export class Shrine extends DurableObject {
   async alarm() {
     if (this.ctx.getWebSockets().length) return this.touch();
     await this.ctx.storage.deleteAll();
+    this.stored = false;
   }
 
   left(ws) {
@@ -182,6 +186,7 @@ export class Shrine extends DurableObject {
 
   async save() {
     await this.ctx.storage.put('altar', this.state);
+    this.stored = true;
     await this.touch();
   }
 
