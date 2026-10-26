@@ -404,10 +404,10 @@ body[data-conn="closed"] .presence { opacity: .45; }
   flex-direction: column;
   gap: var(--space-4);
   overflow-y: auto;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
   padding: 0 6px 8px 0;
 }
-.side::-webkit-scrollbar { display: none; }
 .side--left { display: flex; flex-direction: column; gap: var(--space-4); min-height: 0; }
 
 /* Sheet: the notebook page every card sits on */
@@ -523,7 +523,7 @@ button.person:hover { background: var(--paper-sunk); }
 .title {
   margin: 4px 0 0;
   font-weight: 500;
-  font-size: clamp(2.4rem, 4.8vw, 4.6rem);
+  font-size: clamp(2.4rem, min(4.8vw, 8vh), 4.6rem);
   line-height: 1.02;
   letter-spacing: -.04em;
   text-wrap: balance;
@@ -660,7 +660,7 @@ body[data-state="lit"] .mantra__dot { background: var(--flame); }
   border-radius: var(--radius-sm);
   background: var(--paper-raised);
 }
-.card--status { display: flex; flex-direction: column; gap: 18px; }
+.card--status { display: flex; flex-direction: column; gap: 14px; }
 .burn__row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 14px; color: var(--muted); }
 .burn__state { font-weight: 600; color: var(--ink); }
 body[data-state="lit"] .burn__state { color: var(--ember); }
@@ -708,7 +708,7 @@ body[data-state="lit"] .burn .burn__time { color: var(--ember); }
   border-top: 1px solid var(--line);
   background: var(--paper-raised);
 }
-.quick { grid-area: quick; display: flex; gap: var(--space-2); flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 2px; }
+.quick { grid-area: quick; display: flex; gap: var(--space-2); flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 2px; min-height: 36px; } /* holds its row before the prayers are dealt, so the dock's height is stable */
 .quick::-webkit-scrollbar { display: none; }
 .quick__chip {
   flex-shrink: 0;
@@ -1093,43 +1093,52 @@ body[data-fx="lite"] .layer--fog { display: none; }
 body[data-fx="lite"] .stick__halo, body[data-fx="lite"] .kneeler__halo { display: none; }
 
 /* ---------- Responsive ---------- */
-@media (max-height: 760px) {
-  .subtitle { display: none; }
-  .quick { display: none; }
-  .people { max-height: 22vh; }
+/* Small windows: the page scrolls. The altar fills the first screen, every card
+   follows it in a grid, and the dock stays pinned to the bottom. Nothing is hidden. */
+@media (max-width: 1099px), (max-height: 759px) {
+  html, body { height: auto; }
+  body { min-height: 100dvh; overflow-x: hidden; overflow-y: auto; }
+  .bar { position: sticky; top: 0; }
+  .stage { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; gap: var(--space-5); padding-bottom: var(--space-5); }
+  /* the first screen is the altar: whatever the top bar and the dock leave (measured in main.js) */
+  .center { grid-row: 1; height: max(360px, calc(100dvh - var(--bar-h, 70px) - var(--dock-h, 160px) - 24px)); }
+  .side {
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    align-items: start;
+    overflow: visible;
+    padding: 0 6px 6px 0;
+  }
+  .feed { max-height: 40vh; }
+  .dock { position: sticky; bottom: 0; }
+  .room-chip { max-width: 34vw; }
 }
 
-/* Tablet: one column; the altar's numbers sit in a strip under the heading */
 @media (max-width: 1099px) {
-  .stage { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: var(--space-3); }
-  .side { grid-row: 2; overflow: visible; padding: 0 0 4px; }
-  .center { grid-row: 1; }
-  .side--left { display: none; }
-  .card--status { flex-direction: row; justify-content: flex-start; padding: 10px 18px; }
-  .card--status .vitals, .card--status .burn, .card--status .enlight, .card--status .eta, .card--status .rank { display: none; }
-  .stats { display: flex; gap: 28px; }
-  .stat dd { font-size: 17px; }
   .ema { width: 180px; }
   .ema__plaque { width: 90px; }
-  .room-chip { max-width: 34vw; }
+  .act { min-width: 84px; padding-inline: 10px; }
+  .act--primary { min-width: 140px; }
+}
+
+/* Narrow tablet and phone: the dock stacks */
+@media (max-width: 899px) {
   .dock { grid-template-columns: minmax(0, 1fr); grid-template-areas: "quick" "pray" "actions" "credit"; }
   .actions { display: grid; grid-template-columns: 1fr 1fr 1.6fr 1fr 1fr; }
   .act { min-width: 0; }
-  .act--primary { order: 0; }
   .tray { left: 50%; right: auto; transform: translateX(-50%); }
 }
 
-/* Phone: the people live in the top bar, events arrive as toasts */
+/* Phone */
 @media (max-width: 760px) {
   .hide-sm { display: none; }
   .show-sm { display: inline; }
   .bar { padding: 8px 16px; gap: 8px; }
   .brand__name { display: none; }
   .presence__avatar:nth-child(n+4) { display: none; }
-  .room-chip { display: none; }
-  .stage { padding: 12px 16px 0; gap: 10px; }
-  .card--status { padding: 8px 14px; box-shadow: none; }
-  .stats { gap: 18px; width: 100%; justify-content: space-between; }
+  .room-chip__name { max-width: 28vw; }
+  .stage { padding: 12px 16px var(--space-4); }
   .kneeler__name { display: none; }
   .kneeler__tag { padding: 2px; }
   .ema { display: none; }
@@ -1139,7 +1148,7 @@ body[data-fx="lite"] .stick__halo, body[data-fx="lite"] .kneeler__halo { display
   .combo__n { font-size: 1.6rem; }
   .heading { gap: 4px; }
   .title { font-size: clamp(2rem, 10vw, 2.6rem); }
-  .subtitle { display: none; }
+  .subtitle { font-size: 16px; }
   .mantra { font-size: 12px; max-width: 92vw; }
   #mantra { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 78vw; }
   .dock { padding: 10px 12px max(8px, env(safe-area-inset-bottom)); row-gap: 8px; }
