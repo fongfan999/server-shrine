@@ -48,6 +48,19 @@ const toastEl = $('#toast');
 const panel = $('#panel');
 const backdrop = $('#panel-backdrop');
 
+/* ---------- Layout: on small screens the altar fills what the top bar and dock leave ---------- */
+function measureChrome() {
+  body.style.setProperty('--bar-h', `${$('.bar').offsetHeight}px`);
+  body.style.setProperty('--dock-h', `${$('.dock').offsetHeight}px`);
+}
+measureChrome();
+window.addEventListener('resize', measureChrome);
+{
+  const chrome = new ResizeObserver(measureChrome);
+  chrome.observe($('.bar'));
+  chrome.observe($('.dock'));
+}
+
 /* ---------- Engines ---------- */
 syncPalette(); // the canvas layers read their colours from the tokens; applyTheme() refreshes them
 const room = buildServerRoom($('#server-room'));
@@ -300,7 +313,11 @@ const feedEl = $('#feed');
 const feedEmpty = $('#feed-empty');
 const sideLeft = $('.side--left');
 const FEED_MAX = 50;
-const feedVisible = () => sideLeft.offsetParent !== null;
+/** The activity and people cards are on screen (on small screens they sit below the altar). */
+const feedVisible = () => {
+  const r = sideLeft.getBoundingClientRect();
+  return r.height > 0 && r.top < innerHeight && r.bottom > 0;
+};
 
 function ago(at) {
   const s = Math.max(0, Math.round((Date.now() - at) / 1000));

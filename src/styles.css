@@ -334,9 +334,10 @@ a { color: inherit; }
   background: var(--paper);
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; text-decoration: none; flex-shrink: 0; }
-.brand__mark { width: 30px; height: 30px; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.brand__mark { width: 32px; height: 32px; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3.6; }
 .brand__bowl, .brand__sticks { stroke: var(--ink); }
 .brand__smoke { stroke: var(--accent); }
+.brand__embers { fill: var(--flame); stroke: none; }
 .brand__name { font-weight: 650; font-size: 18px; letter-spacing: -.02em; }
 
 .room-chip {
