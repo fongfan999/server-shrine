@@ -1,4 +1,4 @@
-/* ---------- Design tokens: the Server Shrine design system, on the Wot Da Fong brand ---------- */
+/* ---------- Design tokens: the Wot Da Shrine design system, on the Wot Da Fong brand ---------- */
 body {
   --paper: #f7f5ee;
   --paper-raised: #fcfaf4;
@@ -334,12 +334,16 @@ a { color: inherit; }
   border-bottom: 1px solid var(--line);
   background: var(--paper);
 }
-.brand { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; text-decoration: none; flex-shrink: 0; }
-.brand__mark { width: 32px; height: 32px; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3.6; }
+.brand { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; text-decoration: none; flex-shrink: 0; }
+/* Wot Da Shrine: "Wot Da" is the Wot Da Fong lettering in ink, the product name in cobalt */
+.brand__word { display: block; height: 26px; width: auto; aspect-ratio: 466 / 78; }
+.brand__wot { fill: var(--ink); }
+.brand__shrine { color: var(--accent); }
+/* The Censer takes the place of the parent's ?!, its bowl on the wordmark's baseline */
+.brand__mark { width: 21px; height: 24px; translate: 0 -2px; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 4.2; }
 .brand__bowl, .brand__sticks { stroke: var(--ink); }
 .brand__smoke { stroke: var(--accent); }
 .brand__embers { fill: var(--flame); stroke: none; }
-.brand__name { font-weight: 650; font-size: 18px; letter-spacing: -.02em; }
 
 .room-chip {
   display: inline-flex;
@@ -1133,7 +1137,8 @@ body[data-fx="lite"] .stick__halo, body[data-fx="lite"] .kneeler__halo { display
   .hide-sm { display: none; }
   .show-sm { display: inline; }
   .bar { padding: 8px 16px; gap: 8px; }
-  .brand__name { display: none; }
+  .brand__word { display: none; }
+  .brand__mark { width: 28px; height: 32px; translate: none; }
   .presence__avatar:nth-child(n+4) { display: none; }
   .room-chip__name { max-width: 28vw; }
   .stage { padding: 12px 16px var(--space-4); }

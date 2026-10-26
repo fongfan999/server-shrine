@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Server Shrine: when the servers are down, the team prays together in real time.",
+  "description": "Wot Da Shrine: when the servers are down, the team prays together in real time.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

@@ -1,4 +1,4 @@
-export const BRAND = 'Server Shrine';
+export const BRAND = 'Wot Da Shrine';
 
 export const STRINGS = {
   eyebrow: 'Scheduled maintenance',

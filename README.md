@@ -1,4 +1,4 @@
-# Server Shrine 🪔
+# Wot Da Shrine 🪔
 
 When the servers are down, the team prays together. Open a shrine, send the
 link to your teammates, and light incense, ring the bowl, bow, make offerings
