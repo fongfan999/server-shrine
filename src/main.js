@@ -12,8 +12,9 @@ import { roomFromPath, connectRoom, loadMe, saveMe, AVATARS } from './room.js';
 import { Congregation } from './congregation.js';
 import { Motes } from './motes.js';
 import { Vitals } from './vitals.js';
-import { buildHanging } from './hanging.js';
 import { WishBoard } from './ema.js';
+import { syncPalette } from './palette.js';
+import { icon } from './icons.js';
 
 const $ = (sel) => document.querySelector(sel);
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -48,13 +49,13 @@ const panel = $('#panel');
 const backdrop = $('#panel-backdrop');
 
 /* ---------- Engines ---------- */
+syncPalette(); // the canvas layers read their colours from the tokens; applyTheme() refreshes them
 const room = buildServerRoom($('#server-room'));
 const art = buildBurner($('#burner-art'));
 const smoke = new IncenseSmoke($('#smoke'), () => art.tips());
 const fog = new Fog($('#fog'));
 const petals = new Petals($('#petals'));
 const motes = new Motes($('#motes'));
-const hanging = buildHanging($('#hang'));
 const congregation = new Congregation($('#congregation'), burner);
 const vitals = new Vitals($('#ekg'), $('#vitals-bpm'));
 const wishes = new WishBoard($('#ema'));
@@ -89,7 +90,6 @@ function applyFx() {
     petals.setLite(lite);
     congregation.setLite(lite);
     sound.setLite(lite);
-    startRays();
     applyFrameBudget();
   }
   $('#fx-note').textContent = t(settings.fx === 'auto' ? 'fxNoteAuto' : lite ? 'fxNoteLite' : 'fxNoteFull') + (settings.fx === 'auto' ? ` ${t(lite ? 'fxLite' : 'fxFull')}.` : '');
@@ -151,9 +151,8 @@ $('#fx-seg').addEventListener('click', (e) => {
 
 /* ---------- Apply settings ---------- */
 function applySettings(animate = false) {
-  body.dataset.theme = settings.theme;
+  applyTheme();
   applyFx();
-  motes.syncColor();
   applyStrings({ title: settings.title, subtitle: settings.subtitle });
   document.title = `${settings.title || t('title')} · ${BRAND}`;
   if (roomName) $('#eyebrow').textContent = fmt('roomEyebrow', { room: roomName });
@@ -169,11 +168,21 @@ function applySettings(animate = false) {
   panel.querySelector('[name=subtitle]').value = settings.subtitle;
   panel.querySelector('[name=eta]').value = settings.eta ? toLocalInput(settings.eta) : '';
   for (const k of ['music', 'sfx', 'petals', 'fog']) panel.querySelector(`[name=${k}]`).checked = settings[k];
-  panel.querySelectorAll('.swatch').forEach((s) => s.classList.toggle('active', s.dataset.theme === settings.theme));
+  $('#theme-seg').querySelectorAll('button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.theme === settings.theme)));
 
   updateEta();
   updateStats();
 }
+
+/* ---------- Theme: auto follows the system's light or dark setting ---------- */
+const darkQuery = matchMedia('(prefers-color-scheme: dark)');
+function applyTheme() {
+  const scheme = settings.theme === 'auto' ? (darkQuery.matches ? 'dark' : 'light') : settings.theme;
+  body.dataset.theme = settings.theme;
+  body.dataset.scheme = scheme;
+  syncPalette();
+}
+darkQuery.addEventListener('change', () => { if (settings.theme === 'auto') applyTheme(); });
 
 function toLocalInput(iso) {
   const d = new Date(iso);
@@ -217,10 +226,8 @@ function intro() {
   gsap.set(dock, { y: 24, opacity: 0 });
   gsap.set('.burner', { y: 60, opacity: 0, scale: 0.92 });
 
-  // Camera pushes down the server corridor, the lanterns drop, the light comes up.
+  // Camera pushes down the server corridor.
   gsap.fromTo('.layer--bg', { scale: 1.35, opacity: 0 }, { scale: 1, opacity: 1, duration: 3.6, ease: 'power2.out' });
-  gsap.from('.hang', { y: '-45vh', duration: 2.2, ease: 'back.out(1.2)', stagger: 0.15, delay: 0.6 });
-  gsap.from('#rays', { opacity: 0, duration: 3, delay: 1 });
 
   gsap.timeline({ defaults: { ease: 'power3.out' } })
     .to('.bar', { y: 0, opacity: 1, duration: 0.8 }, 0.1)
@@ -242,28 +249,13 @@ function parallax() {
   const bgY = gsap.quickTo('.layer--bg', 'y', { duration: 1.2, ease: 'power3.out' });
   const headX = gsap.quickTo('.heading', 'x', { duration: 1.2, ease: 'power3.out' });
   const burnerX = gsap.quickTo('.burner', 'x', { duration: 1.4, ease: 'power3.out' });
-  const light = $('#pointer-light');
-  const lightX = gsap.quickTo(light, 'x', { duration: 0.9, ease: 'power3.out' });
-  const lightY = gsap.quickTo(light, 'y', { duration: 0.9, ease: 'power3.out' });
   window.addEventListener('pointermove', (e) => {
     const nx = (e.clientX / innerWidth - 0.5);
     const ny = (e.clientY / innerHeight - 0.5);
     bgX(-nx * 30); bgY(-ny * 20);
     headX(nx * 6);
     burnerX(nx * 12);
-    lightX(e.clientX); lightY(e.clientY);
-    if (!light.dataset.on) { light.dataset.on = '1'; gsap.to(light, { opacity: 1, duration: 1.2 }); }
   }, { passive: true });
-}
-
-/* ---------- Light shimmer ---------- */
-function startRays() {
-  const rays = gsap.utils.toArray('.ray');
-  gsap.killTweensOf(rays);
-  if (lite) { gsap.set(rays, { opacity: 0.8 }); return; }
-  rays.forEach((ray) => {
-    gsap.to(ray, { opacity: () => gsap.utils.random(0.45, 1), duration: () => gsap.utils.random(2, 4.5), repeat: -1, repeatRefresh: true, yoyo: true, ease: 'sine.inOut' });
-  });
 }
 
 /* ---------- Rack 42's heart rate: flat while cold, faster with more people and more devotion ---------- */
@@ -272,17 +264,11 @@ function kick(amount, strength = 1) {
   devotion = Math.min(60, devotion + amount);
   vitals.kick(strength);
 }
-const moodEl = $('#vitals-mood');
 setInterval(() => {
   devotion *= 0.93;
   const crowd = Math.max(1, people.size);
   const bpm = lit ? Math.min(160, 58 + (crowd - 1) * 7 + devotion) : 0;
   vitals.setBpm(bpm);
-  const face = !bpm ? '💀' : bpm < 72 ? '😵‍💫' : bpm < 95 ? '🙂' : bpm < 125 ? '😌' : '🔥';
-  if (moodEl.textContent !== face) {
-    moodEl.textContent = face;
-    if (!reduceMotion) gsap.fromTo(moodEl, { scale: 1.5 }, { scale: 1, duration: 0.7, ease: 'elastic.out(1, 0.5)' });
-  }
 }, 1000);
 
 /* ---------- Mantras ---------- */
@@ -410,23 +396,23 @@ let shownRank = -1;
 function updateRank(quiet) {
   const ranks = STRINGS.ranks;
   const i = ranks.reduce((idx, [at], k) => (counters.karma >= at ? k : idx), 0);
-  const [at, name, badge] = ranks[i];
+  const [at, name] = ranks[i];
   const next = ranks[i + 1];
   rankName.textContent = name;
-  rankBadge.textContent = badge;
+  rankBadge.textContent = String(i + 1);
   rankNext.textContent = next ? fmt('toNext', { n: next[0] - counters.karma, rank: next[1] }) : t('maxRank');
   rankBar.style.width = next ? `${((counters.karma - at) / (next[0] - at)) * 100}%` : '100%';
   const promoted = shownRank !== -1 && i > shownRank && !quiet;
   shownRank = i;
   if (!promoted) return;
-  toast(`${badge} ${fmt('promoted', { rank: name })}`);
+  toast(fmt('promoted', { rank: name }));
   sound.bowl(329);
   petals.burst(30);
   if (!reduceMotion) gsap.fromTo('.rank', { scale: 1.06 }, { scale: 1, duration: 0.9, ease: 'elastic.out(1, 0.45)', transformOrigin: '0% 50%' });
 }
 
 function bump(el) {
-  gsap.fromTo(el, { scale: 1.3, color: '#fff' }, { scale: 1, color: '', duration: 0.6, ease: 'elastic.out(1, 0.5)', transformOrigin: '0% 100%' });
+  gsap.fromTo(el, { scale: 1.3, color: getComputedStyle(body).getPropertyValue('--accent') }, { scale: 1, color: '', duration: 0.6, ease: 'elastic.out(1, 0.5)', transformOrigin: '0% 100%' });
 }
 
 function addKarma(n = 1) {
@@ -510,7 +496,6 @@ function ignite(at) {
   petals.rate = 1.4;
   congregation.setLit(true);
   motes.setLit(true);
-  hanging.setLit(true);
   tickProgress();
 
   if (fresh) {
@@ -518,15 +503,13 @@ function ignite(at) {
     gsap.delayedCall(0.9, () => sound.bowl(196));
     petals.burst(24);
     kick(20, 1.2);
-    // sparks fly off the sticks as they catch, and the light from above flares
+    // sparks fly off the sticks as they catch
     gsap.delayedCall(0.5, () => art.tips().forEach((tip) => motes.burst(tip.x, tip.y, 26)));
-    if (!lite) gsap.fromTo('#rays', { filter: 'brightness(2.4)' }, { filter: 'brightness(1)', duration: 2.4, ease: 'power2.out' });
     shockwave();
     // Flash + shake of the burner, like a flame catching
     gsap.timeline()
       .to('.burner', { scale: 1.04, duration: 0.15, ease: 'power2.out' })
       .to('.burner', { scale: 1, duration: 0.8, ease: 'elastic.out(1, 0.4)' });
-    if (!lite) gsap.fromTo('.layer--vignette', { filter: 'brightness(1.6)' }, { filter: 'brightness(1)', duration: 1.4, ease: 'power2.out' });
     gsap.delayedCall(1.2, () => art.bow(3));
   }
 
@@ -553,7 +536,6 @@ function burnOut() {
   smoke.stop();
   congregation.setLit(false);
   motes.setLit(false);
-  hanging.setLit(false);
   if (shrine) shrine.send('burnout');
   else addKarma(10);
   const what = t(roomName ? 'fBurnout' : 'fBurnoutSolo');
@@ -582,7 +564,6 @@ function bowlFx(note) {
   sound.bowl(note * 2 ** (Math.min(combo, 12) / 24));
   room.pulse();
   shockwave();
-  hanging.gust();
   kick(4);
   gsap.fromTo($('#btn-bowl').querySelector('.act__icon'), { rotation: -20 }, { rotation: 0, duration: 1, ease: 'elastic.out(1, 0.3)' });
   gsap.fromTo('.scene', { scale: 1.012 }, { scale: 1, duration: 1.2, ease: 'power2.out' });
@@ -611,7 +592,7 @@ function comboHit() {
   gsap.fromTo(comboEl, { scale: 1.3, opacity: 1, y: 0 }, { scale: 1, duration: 0.5, ease: 'elastic.out(1, 0.4)', overwrite: true });
   if (STRINGS.comboCaptions.some(([at]) => at === combo)) {
     petals.burst(6 + combo);
-    if (combo >= 10) { shockwave(); if (!lite) gsap.fromTo('#rays', { filter: 'brightness(1.8)' }, { filter: 'brightness(1)', duration: 1.6 }); }
+    if (combo >= 10) shockwave();
   }
 }
 function comboEnd() {
@@ -627,7 +608,7 @@ function shockwave() {
     const ring = document.createElement('span');
     ring.className = 'shock';
     floor.appendChild(ring);
-    gsap.fromTo(ring, { scale: 0.3, opacity: 0.95 }, { scale: 4.5 + i * 1.6, opacity: 0, duration: 2 + i * 0.5, delay: i * 0.16, ease: 'power2.out', onComplete: () => ring.remove() });
+    gsap.fromTo(ring, { scale: 0.3, opacity: 0.7 }, { scale: 3.5 + i * 1.2, opacity: 0, duration: 2 + i * 0.5, delay: i * 0.16, ease: 'power2.out', onComplete: () => ring.remove() });
   }
 }
 
@@ -683,18 +664,18 @@ function buildTray() {
   title.textContent = t('trayTitle');
   const grid = document.createElement('div');
   grid.className = 'tray__grid';
-  const item = (kind, emoji, name) => {
+  const item = (kind, art, name) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'tray__item' + (kind ? '' : ' tray__item--random');
     b.dataset.kind = kind;
     b.innerHTML = '<span class="tray__emoji" aria-hidden="true"></span><span class="tray__name"></span>';
-    b.querySelector('.tray__emoji').textContent = emoji;
+    b.querySelector('.tray__emoji').innerHTML = art;
     b.querySelector('.tray__name').textContent = name;
     grid.appendChild(b);
   };
-  for (const [kind, def] of Object.entries(OFFERINGS)) item(kind, def.emoji, def.short);
-  item('', '🎲', t('surprise'));
+  for (const [kind, def] of Object.entries(OFFERINGS)) item(kind, `<svg viewBox="-24 -38 48 42">${def.svg}</svg>`, def.short);
+  item('', icon('dice'), t('surprise'));
   tray.append(title, grid);
 }
 function openTray(open) {
@@ -856,15 +837,13 @@ panel.addEventListener('input', (e) => {
   if (el.type === 'checkbox') sound.tick(el.checked ? 880 : 440, 0.06);
 });
 
-$('#swatches').addEventListener('click', (e) => {
-  const s = e.target.closest('.swatch');
-  if (!s) return;
-  settings.theme = s.dataset.theme;
+$('#theme-seg').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-theme]');
+  if (!b) return;
+  settings.theme = b.dataset.theme;
   persist();
   applySettings();
   sound.tick(740, 0.06);
-  petals.burst(10);
-  gsap.fromTo('.layer--vignette', { opacity: 0.6 }, { opacity: 1, duration: 1 });
 });
 
 $('#btn-copy-link').addEventListener('click', async () => {
@@ -885,7 +864,7 @@ $('#btn-reset').addEventListener('click', () => {
 
 /* ---------- Shared shrine ---------- */
 const DEFAULT_NAMES = ['Sleepy sysadmin', 'On-call monk', 'Intern of the week', 'Senior YAML engineer', 'Database whisperer', 'Kubernetes pilgrim', 'Release shaman', 'Log reader'];
-const ACT_ICONS = { light: '🔥', bowl: '🔔', bow: '🙇', offer: '🍜', prayer: '🏮', puff: '💨' };
+const ACT_ICONS = { light: 'incense', bowl: 'bowl', bow: 'bow', offer: 'offering', prayer: 'lantern', puff: 'breathe' };
 const joinEl = $('#join');
 const joinName = $('#join-name');
 const joinAvatars = $('#join-avatars');
@@ -956,6 +935,7 @@ function connect() {
     onStatus(status) {
       body.dataset.conn = status;
       roomStatus.dataset.status = status;
+      $('#room-state').textContent = t(status === 'open' ? 'statusLive' : status === 'closed' ? 'statusOffline' : 'statusConnecting');
       if (status === 'closed' && greeted) toast(t('offline'));
     },
   });
@@ -1092,17 +1072,17 @@ function renderPeople(newId) {
 }
 
 /** Someone did something: their row glows and the action's icon floats off it. */
-function pingPerson(id, icon) {
+function pingPerson(id, iconName) {
   congregation.nudge(id);
   const el = (feedVisible() && peopleList.querySelector(`[data-id="${id}"]`)) || presence.querySelector(`[data-id="${id}"]`);
   if (!el || reduceMotion) return;
   el.classList.add('is-ping');
   setTimeout(() => el.classList.remove('is-ping'), 700);
-  if (!icon) return;
+  if (!iconName) return;
   const r = el.getBoundingClientRect();
   const f = document.createElement('span');
   f.className = 'ping';
-  f.textContent = icon;
+  f.innerHTML = icon(iconName);
   Object.assign(f.style, { left: `${r.right - 18}px`, top: `${r.top + r.height / 2 - 10}px` });
   document.body.appendChild(f);
   gsap.fromTo(f, { y: 0, opacity: 1, scale: 0.6 }, { y: -28, opacity: 0, scale: 1.2, duration: 1.3, ease: 'power2.out', onComplete: () => f.remove() });

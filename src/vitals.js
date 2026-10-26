@@ -3,6 +3,7 @@
  * cold and picks up as the team prays. Every action kicks an extra beat.
  */
 import gsap from 'gsap';
+import { onPalette } from './palette.js';
 
 const SPEED = 70; // px per second
 
@@ -31,6 +32,7 @@ export class Vitals {
     this.amp = 1;
     this.ys = [];
     this.x = 0;
+    onPalette((p) => { this.colors = p; });
     this.resize();
     new ResizeObserver(() => this.resize()).observe(canvas);
     gsap.ticker.add((time, dt) => this.frame(time, dt / 1000));
@@ -86,8 +88,10 @@ export class Vitals {
     const scale = h * 0.5;
     ctx.clearRect(0, 0, w, h);
 
-    // faint grid
-    ctx.strokeStyle = 'rgba(125, 220, 154, 0.07)';
+    // faint grid, then the trace in green while the rack lives and in rust while it flatlines
+    const { line, live, error } = this.colors;
+    const trace = this.bpm > 0 ? live : error;
+    ctx.strokeStyle = `rgb(${line})`;
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let gx = 0; gx < w; gx += 12) { ctx.moveTo(gx + 0.5, 0); ctx.lineTo(gx + 0.5, h); }
@@ -98,10 +102,8 @@ export class Vitals {
     const n = this.ys.length;
     ctx.lineWidth = 1.6;
     ctx.lineJoin = 'round';
-    ctx.shadowColor = 'rgba(125, 220, 154, 0.8)';
-    ctx.shadowBlur = 8;
     for (let seg = 0; seg < 4; seg++) {
-      ctx.strokeStyle = `rgba(125, 220, 154, ${0.25 + seg * 0.25})`;
+      ctx.strokeStyle = `rgba(${trace}, ${0.25 + seg * 0.25})`;
       ctx.beginPath();
       for (let k = Math.floor((seg * n) / 4); k <= Math.floor(((seg + 1) * n) / 4) - 1; k++) {
         const idx = (this.x + k) % n;
@@ -113,11 +115,10 @@ export class Vitals {
     }
     // write head
     const hx = (this.x - 1 + n) % n;
-    ctx.fillStyle = '#d8ffe4';
+    ctx.fillStyle = `rgb(${trace})`;
     ctx.beginPath();
     ctx.arc(hx, mid - this.ys[hx] * scale, 2.2, 0, Math.PI * 2);
     ctx.fill();
-    ctx.shadowBlur = 0;
     // erase just ahead of the head, like a real monitor sweep
     ctx.clearRect(this.x + 1, 0, 14, h);
 

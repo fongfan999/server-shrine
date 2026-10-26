@@ -4,6 +4,7 @@
  * Tiny ember sparks drift up now and then. Everything is drawn on one canvas.
  */
 import gsap from 'gsap';
+import { onPalette } from './palette.js';
 
 const LIFE = 5200;         // sim-ms a ribbon point lives
 const EMIT_EVERY = 22;     // sim-ms between ribbon points
@@ -12,14 +13,14 @@ const TIPS_EVERY = 100;    // real ms between re-reading the ember positions fro
 const RISE = 0.075;        // px per ms
 const MAX_WIDTH = 9;       // px half-width at the end of life
 
-function makePuffSprite(size = 72) {
+function makePuffSprite(rgb, size = 72) {
   const c = document.createElement('canvas');
   c.width = c.height = size;
   const ctx = c.getContext('2d');
   const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  g.addColorStop(0, 'rgba(236,238,242,0.45)');
-  g.addColorStop(0.4, 'rgba(226,230,236,0.18)');
-  g.addColorStop(1, 'rgba(216,222,230,0)');
+  g.addColorStop(0, `rgba(${rgb},0.45)`);
+  g.addColorStop(0.4, `rgba(${rgb},0.18)`);
+  g.addColorStop(1, `rgba(${rgb},0)`);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
   return c;
@@ -42,7 +43,13 @@ export class IncenseSmoke {
     this.wind = 0.5;
     this.gust = 0;
     this.time = 0;
-    this.sprite = makePuffSprite();
+    // Smoke is drawn in the theme's ink: grey on paper, pale on the night theme.
+    onPalette((p) => {
+      this.rgb = p.ink;
+      this.strength = p.dark ? 1 : 0.5;
+      this.spark = p.flame;
+      this.sprite = makePuffSprite(p.ink);
+    });
     this.lite = false;
     this.dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     this.resize();
@@ -198,11 +205,12 @@ export class IncenseSmoke {
         }
         const topY = tip.y - LIFE * RISE * 0.7;
         const grad = ctx.createLinearGradient(0, tip.y, 0, topY);
-        const peak = 0.55 * this.intensity;
-        grad.addColorStop(0, `rgba(236,240,246,${(peak * 0.9).toFixed(3)})`);
-        grad.addColorStop(0.25, `rgba(232,236,242,${(peak * 0.75).toFixed(3)})`);
-        grad.addColorStop(0.65, `rgba(228,232,240,${(peak * 0.28).toFixed(3)})`);
-        grad.addColorStop(1, 'rgba(224,228,236,0)');
+        const peak = 0.55 * this.intensity * this.strength;
+        const rgb = this.rgb;
+        grad.addColorStop(0, `rgba(${rgb},${(peak * 0.9).toFixed(3)})`);
+        grad.addColorStop(0.25, `rgba(${rgb},${(peak * 0.75).toFixed(3)})`);
+        grad.addColorStop(0.65, `rgba(${rgb},${(peak * 0.28).toFixed(3)})`);
+        grad.addColorStop(1, `rgba(${rgb},0)`);
         ctx.fillStyle = grad;
         ctx.beginPath();
         ctx.moveTo(left[0][0], left[0][1]);
@@ -222,7 +230,7 @@ export class IncenseSmoke {
       p.x += (p.vx + wind * 0.012 * a) * ms;
       p.y += p.vy * ms * (1 - a * 0.5);
       p.size += p.grow * ms;
-      ctx.globalAlpha = p.alpha * Math.sin(Math.PI * a) * Math.max(this.intensity, 0.3);
+      ctx.globalAlpha = p.alpha * Math.sin(Math.PI * a) * Math.max(this.intensity, 0.3) * this.strength;
       ctx.drawImage(this.sprite, p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
     }
     ctx.globalAlpha = 1;
@@ -236,13 +244,11 @@ export class IncenseSmoke {
       s.x += (s.vx + Math.sin(s.age * 0.02) * 0.02) * ms;
       s.y += s.vy * ms;
       ctx.globalAlpha = (1 - a) * 0.9;
-      ctx.fillStyle = a < 0.4 ? '#ffe9b0' : '#ff9a3c';
-      if (!this.lite) { ctx.shadowColor = '#ff8a2a'; ctx.shadowBlur = 6; }
+      ctx.fillStyle = `rgb(${this.spark})`;
       ctx.beginPath();
       ctx.arc(s.x, s.y, 1.4 - a * 0.6, 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
   }
 }

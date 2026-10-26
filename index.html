@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0b0c0a" />
+  <meta name="theme-color" content="#f7f5ee" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#151713" media="(prefers-color-scheme: dark)" />
   <meta name="description" content="Server Shrine: when the servers are down, the team prays together. Open a shrine, share the link, light incense, ring the bowl and send prayers to the rack in real time." />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Server Shrine: pray for uptime, together" />
@@ -11,22 +12,15 @@
   <meta name="twitter:card" content="summary" />
   <title>Server Shrine</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/src/styles.css" />
 </head>
-<body data-theme="gold" data-state="unlit" data-mode="solo" data-fx="full">
+<body data-theme="auto" data-state="unlit" data-mode="solo" data-fx="full">
   <!-- Layered scene -->
   <div class="scene" id="scene" aria-hidden="true">
     <div class="layer layer--bg" id="server-room"></div>
-    <div class="layer layer--vignette"></div>
-    <div class="layer layer--rays" id="rays"><span class="ray"></span><span class="ray"></span><span class="ray"></span><span class="ray"></span><span class="ray"></span></div>
-    <div class="layer layer--hang" id="hang"></div>
+    <div class="layer layer--grid"></div>
     <canvas class="layer layer--fog" id="fog"></canvas>
     <div class="layer layer--petals" id="petals"></div>
-    <div class="pointer-light" id="pointer-light"></div>
-    <div class="layer layer--grain"></div>
   </div>
   <canvas class="smoke-layer" id="smoke" aria-hidden="true"></canvas>
   <canvas class="motes-layer" id="motes" aria-hidden="true"></canvas>
@@ -46,12 +40,12 @@
     <div class="room-chip" id="room-chip" hidden>
       <span class="status-dot" id="room-status" data-status="connecting"></span>
       <span class="room-chip__name" id="room-name"></span>
+      <span class="room-chip__state" id="room-state">Connecting</span>
     </div>
 
     <div class="bar__right">
       <button class="presence" id="presence" type="button" hidden aria-label="People in the shrine"></button>
       <a class="btn btn--accent btn--sm" id="btn-together" href="/new">
-        <span aria-hidden="true">🙏</span>
         <span class="hide-sm" data-i18n="together">Pray with your team</span>
         <span class="show-sm" data-i18n="togetherShort">Team</span>
       </a>
@@ -73,29 +67,6 @@
   </header>
 
   <main class="stage">
-    <!-- Left: who is here + what they did -->
-    <aside class="side side--left" aria-label="Shrine activity">
-      <section class="card" id="people-card" hidden>
-        <h2 class="label"><span data-i18n="inShrine">In the shrine</span> <span class="label__count" id="people-count">1</span></h2>
-        <ul class="people" id="people"></ul>
-      </section>
-
-      <section class="card card--solo" id="solo-card">
-        <h2 class="label" data-i18n="soloLabel">Praying alone</h2>
-        <p class="card__text" data-i18n="soloText">Open a shared shrine and send the link to your team. Everyone's incense, offerings and prayers land on the same altar, live.</p>
-        <a class="btn btn--accent btn--block" href="/new">
-          <span aria-hidden="true">🙏</span>
-          <span data-i18n="soloCta">Open a team shrine</span>
-        </a>
-      </section>
-
-      <section class="card card--feed">
-        <h2 class="label" data-i18n="feedLabel">Activity</h2>
-        <ol class="feed" id="feed" aria-live="polite"></ol>
-        <p class="feed__empty" id="feed-empty" data-i18n="feedEmpty">Quiet so far. Light the incense to begin.</p>
-      </section>
-    </aside>
-
     <!-- Center: heading + altar -->
     <section class="center">
       <div class="heading">
@@ -116,13 +87,13 @@
       </div>
     </section>
 
-    <!-- Right: the altar's state -->
-    <aside class="side side--right" aria-label="Altar status">
+    <!-- Right: the altar's state, then who is here and what they did -->
+    <aside class="side" aria-label="Altar status and activity">
       <section class="card card--status">
         <div class="vitals">
           <div class="burn__row">
             <h2 class="label" data-i18n="vitalsLabel">Rack 42 vitals</h2>
-            <span class="vitals__read"><span class="vitals__mood" id="vitals-mood" aria-hidden="true">💀</span><span class="vitals__bpm" id="vitals-bpm">flatlining</span></span>
+            <span class="vitals__read"><span class="vitals__bpm" id="vitals-bpm">flatlining</span></span>
           </div>
           <canvas class="vitals__ekg" id="ekg" aria-hidden="true"></canvas>
         </div>
@@ -139,11 +110,11 @@
           <div class="stat"><dt data-i18n="statTime">In meditation</dt><dd id="stat-time">00:00</dd></div>
         </dl>
         <div class="rank">
-          <span class="rank__badge" id="rank-badge" aria-hidden="true">👀</span>
+          <span class="rank__badge" id="rank-badge" aria-hidden="true">1</span>
           <div class="rank__text">
             <b class="rank__name" id="rank-name">Lurker in #incidents</b>
             <span class="rank__next" id="rank-next"></span>
-            <div class="meter meter--thin"><div class="meter__bar meter__bar--soft" id="rank-bar"></div></div>
+            <div class="meter meter--thin"><div class="meter__bar" id="rank-bar"></div></div>
           </div>
         </div>
         <div class="enlight">
@@ -152,11 +123,31 @@
             <span class="burn__time" id="progress-pct">0%</span>
           </div>
           <div class="meter" role="progressbar" aria-label="Enlightenment" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress">
-            <div class="meter__bar meter__bar--soft" id="progress-bar"></div>
+            <div class="meter__bar" id="progress-bar"></div>
           </div>
         </div>
         <p class="eta"><span class="status-dot" data-status="open" aria-hidden="true"></span><span id="eta-text"></span></p>
       </section>
+      <div class="side--left" aria-label="Shrine activity">
+        <section class="card" id="people-card" hidden>
+          <h2 class="label"><span data-i18n="inShrine">In the shrine</span> <span class="label__count" id="people-count">1</span></h2>
+          <ul class="people" id="people"></ul>
+        </section>
+
+        <section class="card card--solo" id="solo-card">
+          <h2 class="label" data-i18n="soloLabel">Praying alone</h2>
+          <p class="card__text" data-i18n="soloText">Open a shared shrine and send the link to your team. Everyone's incense, offerings and prayers land on the same altar, live.</p>
+          <a class="btn btn--accent btn--block" href="/new">
+            <span data-i18n="soloCta">Open a team shrine</span>
+          </a>
+        </section>
+
+        <section class="card card--feed">
+          <h2 class="label" data-i18n="feedLabel">Activity</h2>
+          <ol class="feed" id="feed" aria-live="polite"></ol>
+          <p class="feed__empty" id="feed-empty" data-i18n="feedEmpty">Quiet so far. Light the incense to begin.</p>
+        </section>
+      </div>
     </aside>
   </main>
 
@@ -165,7 +156,7 @@
     <div class="quick" id="quick" aria-label="Quick prayers"></div>
     <form class="pray" id="wish-form" autocomplete="off">
       <label class="sr-only" for="wish-input" data-i18n="wishLabel">Say a prayer to the servers</label>
-      <span class="pray__icon" aria-hidden="true">🏮</span>
+      <span class="pray__icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M10 3h4M12 3v2"/><path d="M8 7.5C8 6 9.5 5 12 5s4 1 4 2.5v7c0 1.5-1.5 2.5-4 2.5s-4-1-4-2.5z"/><path d="M8 11h8"/><path d="M11 17v2h2v-2M12 19v2"/></svg></span>
       <input class="pray__input" id="wish-input" type="text" maxlength="60" placeholder="Please don’t crash during the demo…" data-i18n-placeholder="wishPlaceholder" />
       <button class="pray__send" type="submit" aria-label="Release prayer lantern">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
@@ -173,28 +164,28 @@
     </form>
     <div class="actions">
       <button class="act" id="btn-bowl" type="button" title="Ring the bowl (B)">
-        <span class="act__icon" aria-hidden="true">🔔</span><span class="act__label" data-i18n="bowl">Ring bowl</span><kbd>B</kbd>
+        <span class="act__icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M3.5 11h17a8.5 8.5 0 0 1-17 0z"/><path d="M9 19.5h6"/><path d="M16.5 4.5l3-1.5M18 8l3-.5"/></svg></span><span class="act__label" data-i18n="bowl">Ring bowl</span><kbd>B</kbd>
       </button>
       <button class="act" id="btn-bow" type="button" title="Bow (P)">
-        <span class="act__icon" aria-hidden="true">🙇</span><span class="act__label" data-i18n="bow">Bow</span><kbd>P</kbd>
+        <span class="act__icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><circle cx="15" cy="6" r="2"/><path d="M13.5 8.5L9 12l-3 0"/><path d="M9 12l2 4h5l1 4"/><path d="M4 20h16"/></svg></span><span class="act__label" data-i18n="bow">Bow</span><kbd>P</kbd>
       </button>
       <button class="act act--primary" id="btn-light" type="button" title="Light the incense (L)">
-        <span class="act__flame" aria-hidden="true"></span>
+        <span class="act__icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M9 20V9M12 20V7M15 20V9"/><path d="M12 4.5c-1-1 .8-2-.2-3"/><path d="M5 20h14"/></svg></span>
         <span class="act__label act__label--unlit" data-i18n="light">Light incense</span>
         <span class="act__label act__label--lit"><span data-i18n="burning">Burning</span> <span id="dock-time">10:00</span></span>
         <kbd>L</kbd>
       </button>
       <button class="act" id="btn-offer" type="button" title="Make an offering (O)" aria-haspopup="menu" aria-expanded="false" aria-controls="tray">
-        <span class="act__icon" aria-hidden="true">🍜</span><span class="act__label" data-i18n="offer">Offer</span><kbd>O</kbd>
+        <span class="act__icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 8c0-1.5 1-1.5 1-3M14 8c0-1.5 1-1.5 1-3"/><path d="M15 3.5l5 4"/></svg></span><span class="act__label" data-i18n="offer">Offer</span><kbd>O</kbd>
       </button>
       <button class="act" id="btn-breathe" type="button" aria-pressed="false" title="Breathe (Space)">
-        <span class="act__icon" aria-hidden="true">🫁</span><span class="act__label" data-i18n="breathe">Breathe</span><kbd>␣</kbd>
+        <span class="act__icon" aria-hidden="true"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7" stroke-dasharray="2 3"/><path d="M12 2v1.5M12 20.5V22"/></svg></span><span class="act__label" data-i18n="breathe">Breathe</span><kbd>␣</kbd>
       </button>
     </div>
     <div class="tray" id="tray" role="menu" aria-label="Choose an offering" hidden></div>
     <p class="credit">
       <span class="hide-sm" data-i18n="tagline">Pray for uptime, together.</span>
-      <a href="https://wotdafong.dev/" target="_blank" rel="noopener"><span data-i18n="madeBy">Made by</span> Wot Da Fong ↗</a>
+      <a href="https://wotdafong.dev/" target="_blank" rel="noopener"><img class="credit__mark credit__mark--ink" src="/wotdafong-ink.svg" alt="" width="16" height="16" /><img class="credit__mark credit__mark--paper" src="/wotdafong-paper.svg" alt="" width="16" height="16" /><span data-i18n="madeBy">Made by</span> Wot Da Fong ↗</a>
       <a href="https://github.com/fongfan999/server-shrine" target="_blank" rel="noopener"><span data-i18n="openSource">Open source</span> ↗</a>
     </p>
   </footer>
@@ -216,7 +207,6 @@
       <input class="join__input" id="join-name" type="text" maxlength="24" required />
       <div class="join__avatars" id="join-avatars" role="radiogroup" aria-label="Pick an avatar"></div>
       <button class="btn btn--accent btn--block" type="submit">
-        <span aria-hidden="true">🙇</span>
         <span data-i18n="joinBtn">Kneel at the altar</span>
       </button>
     </form>
@@ -249,11 +239,10 @@
       </label>
       <div class="field">
         <span data-i18n="fTheme">Theme</span>
-        <div class="swatches" id="swatches">
-          <button type="button" class="swatch" data-theme="gold" style="--c:#e8b54d" aria-label="Gold"></button>
-          <button type="button" class="swatch" data-theme="jade" style="--c:#5ad1a8" aria-label="Jade"></button>
-          <button type="button" class="swatch" data-theme="sakura" style="--c:#ff9fc1" aria-label="Sakura"></button>
-          <button type="button" class="swatch" data-theme="ember" style="--c:#ff6b3d" aria-label="Ember"></button>
+        <div class="seg" id="theme-seg" role="radiogroup" aria-label="Theme">
+          <button type="button" role="radio" data-theme="auto" aria-checked="true" data-i18n="themeAuto">Auto</button>
+          <button type="button" role="radio" data-theme="light" aria-checked="false" data-i18n="themeLight">Light</button>
+          <button type="button" role="radio" data-theme="dark" aria-checked="false" data-i18n="themeDark">Dark</button>
         </div>
       </div>
       <div class="field">
@@ -292,7 +281,7 @@
           <span data-i18n="reset">Reset</span>
         </button>
       </div>
-      <p class="panel__hint" data-i18n="panelHint">Everything here is also a URL parameter, e.g. ?title=…&amp;theme=jade&amp;petals=0</p>
+      <p class="panel__hint" data-i18n="panelHint">Everything here is also a URL parameter, e.g. ?title=…&amp;theme=dark&amp;petals=0</p>
     </div>
   </aside>
   <div class="panel-backdrop" id="panel-backdrop"></div>

@@ -5,7 +5,7 @@
  * so a customized page can be shared as a link.
  */
 
-export const THEMES = ['gold', 'jade', 'sakura', 'ember'];
+export const THEMES = ['auto', 'light', 'dark']; // auto follows the system
 export const FX = ['auto', 'full', 'lite']; // effects: auto picks lite on phones and slow devices
 
 const STORAGE_KEY = 'incense:settings:v2';
@@ -14,7 +14,7 @@ export const DEFAULTS = {
   title: '',        // '' => use i18n default
   subtitle: '',     // '' => use i18n default
   eta: '',          // ISO date string or ''
-  theme: 'gold',
+  theme: 'auto',
   music: true,
   sfx: true,
   petals: true,

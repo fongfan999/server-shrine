@@ -1,9 +1,10 @@
 /**
- * The altar: a bronze tripod censer on a lacquered table with a silk runner,
- * two red candles, room for offerings, and two devotees from the ops team
- * kneeling in front of it. Inline SVG so everything animates: the incense
- * sticks burn down, embers glow at the live tip, candle flames flicker, the
- * devotees bow, offerings pop onto the table.
+ * The altar, drawn in ink on paper: a tripod censer on a table with a runner,
+ * two candles, room for offerings, and two devotees from the ops team kneeling
+ * in front of it. Inline SVG so everything animates: the incense sticks burn
+ * down, embers glow at the live tip, candle flames flicker, the devotees bow,
+ * offerings pop onto the table. Colours come from the drawing classes in
+ * styles.css, so the altar follows the theme.
  */
 import gsap from 'gsap';
 
@@ -23,279 +24,170 @@ const SLOTS = [148, 186, 334, 372]; // x positions for offerings on the table
 /* ---------- offerings: small vector icons, drawn with their base at (0,0) ---------- */
 export const OFFERINGS = {
   energy: {
-    emoji: '🥤',
     short: 'Energy drink',
     label: 'an energy drink',
-    svg: `<rect x="-8" y="-34" width="16" height="34" rx="3" fill="#1d2a3d"/><rect x="-8" y="-34" width="16" height="4" fill="#9fb3c8"/><rect x="-8" y="-22" width="16" height="9" fill="#2bb7ff"/><path d="M-2 -21 l4 -0 l-2 4 l3 0 l-5 6 l1 -4 l-3 0 z" fill="#ffd34d"/><rect x="-6" y="-33" width="3" height="30" fill="#fff" opacity="0.12"/>`,
+    svg: `<rect class="d-paper" x="-8" y="-34" width="16" height="34" rx="3"/><path class="d-thin" d="M-8 -29h16M-8 -6h16"/><path class="d-ink" d="M-1 -24 l4 0 l-2 4 l3 0 l-5 7 l1 -5 l-3 0 z"/>`,
   },
   noodles: {
-    emoji: '🍜',
     short: 'Instant noodles',
     label: 'a cup of instant noodles',
-    svg: `<path d="M-13 -30 L13 -30 L10 0 L-10 0 Z" fill="#f4efe6"/><path d="M-13 -30 L13 -30 L12 -22 L-12 -22 Z" fill="#d8202e"/><ellipse cx="0" cy="-30" rx="13" ry="3.5" fill="#fff"/><path d="M-6 -16 h12 M-5 -10 h10" stroke="#d8202e" stroke-width="1.5"/>`,
+    svg: `<path class="d-paper" d="M-13 -30 L13 -30 L10 0 L-10 0 Z"/><path class="d-thin" d="M-12.4 -23 h24.8M-5 -14 h10M-4 -9 h8"/><ellipse class="d-sunk" cx="0" cy="-30" rx="13" ry="3.5"/><path class="d-thin" d="M-4 -35 q2 -4 0 -8M3 -35 q2 -4 0 -8M6 -32 L17 -44"/>`,
   },
   duck: {
-    emoji: '🦆',
     short: 'Rubber duck',
     label: 'a rubber duck',
-    svg: `<ellipse cx="0" cy="-9" rx="13" ry="9" fill="#ffd21f"/><circle cx="7" cy="-20" r="7.5" fill="#ffd21f"/><path d="M13 -20 l8 2 l-8 3 z" fill="#ff8a1f"/><circle cx="9" cy="-22" r="1.4" fill="#1a1206"/><path d="M-12 -12 q-5 -4 -2 -8" stroke="#ffd21f" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+    svg: `<ellipse class="d-paper" cx="0" cy="-9" rx="13" ry="9"/><path class="d-paper" d="M13 -21 l8 2 l-8 3 z"/><circle class="d-paper" cx="7" cy="-20" r="7.5"/><circle class="d-ink" cx="9" cy="-22" r="1.4"/><path class="d-thin" d="M-7 -11 q5 4 11 0"/>`,
   },
   coffee: {
-    emoji: '☕',
     short: 'Coffee',
     label: 'a cup of coffee',
-    svg: `<path d="M-10 -22 L10 -22 L8 0 L-8 0 Z" fill="#f4efe6"/><path d="M10 -18 q8 0 6 8 q-2 6 -8 5" stroke="#f4efe6" stroke-width="3" fill="none"/><path d="M-10 -22 L10 -22 L9.5 -17 L-9.5 -17 Z" fill="#6b3a1e"/><path d="M-3 -28 q2 -4 0 -8 M3 -28 q2 -4 0 -8" stroke="#fff" stroke-opacity="0.5" stroke-width="1.5" fill="none" stroke-linecap="round"/>`,
+    svg: `<path class="d-line" d="M10 -18 q8 0 6 8 q-2 6 -8 5"/><path class="d-paper" d="M-10 -22 L10 -22 L8 0 L-8 0 Z"/><path class="d-thin" d="M-9.6 -17 h19.2"/><path class="d-thin" d="M-3 -27 q2 -4 0 -8M3 -27 q2 -4 0 -8"/>`,
   },
   keyboard: {
-    emoji: '⌨️',
     short: 'Mech keyboard',
     label: 'a mechanical keyboard',
-    svg: `<rect x="-22" y="-10" width="44" height="10" rx="2" fill="#2b2f3a"/><g fill="#8a93a6">${[...Array(8)].map((_, i) => `<rect x="${-19 + i * 5}" y="-8" width="3" height="2.4" rx="0.5"/>`).join('')}${[...Array(8)].map((_, i) => `<rect x="${-19 + i * 5}" y="-4.5" width="3" height="2.4" rx="0.5"/>`).join('')}</g><rect x="-6" y="-8" width="3" height="2.4" rx="0.5" fill="#3fb4ff"/>`,
+    svg: `<rect class="d-paper" x="-22" y="-11" width="44" height="11" rx="2"/><path class="d-thin" d="M-18 -7.5h36M-18 -3.5h36" stroke-dasharray="3 2"/>`,
   },
   usb: {
-    emoji: '💾',
     short: 'The backups',
     label: 'a USB stick with the backups',
-    svg: `<rect x="-5" y="-24" width="10" height="20" rx="2" fill="#2d6cdf"/><rect x="-4" y="-30" width="8" height="7" fill="#c7ced9"/><rect x="-2.5" y="-29" width="5" height="1.5" fill="#55606e"/><rect x="-2.5" y="-26" width="5" height="1.5" fill="#55606e"/><circle cx="0" cy="-12" r="1.6" fill="#9ad0ff"/>`,
+    svg: `<rect class="d-sunk" x="-4" y="-31" width="8" height="8" rx="1"/><rect class="d-paper" x="-6" y="-24" width="12" height="24" rx="2.5"/><path class="d-thin" d="M-2 -28h4"/><circle class="d-ink" cx="0" cy="-8" r="1.6"/>`,
   },
   laptop: {
-    emoji: '💻',
     short: 'Sticker laptop',
     label: 'a laptop covered in stickers',
-    svg: `<rect x="-18" y="-24" width="36" height="22" rx="2" fill="#2b2f3a"/><rect x="-16" y="-22" width="32" height="18" fill="#0f141c"/><rect x="-20" y="-3" width="40" height="3" rx="1" fill="#3a3f4b"/><circle cx="-8" cy="-12" r="3" fill="#ff5d73"/><rect x="2" y="-16" width="7" height="7" rx="1" fill="#7dffc8" transform="rotate(15 5 -12)"/><circle cx="8" cy="-8" r="2" fill="#ffd166"/>`,
+    svg: `<rect class="d-paper" x="-17" y="-25" width="34" height="22" rx="2"/><rect class="d-paper" x="-21" y="-4" width="42" height="4" rx="1.5"/><circle class="d-thin" cx="-8" cy="-14" r="3.5"/><rect class="d-thin" x="2" y="-20" width="7" height="7" rx="1" transform="rotate(15 5 -16)"/><circle class="d-ink" cx="8" cy="-9" r="1.8"/>`,
   },
 };
+
+/** A devotee seen from behind, kneeling, incense raised: drawn with its knees at (0, 0). */
+export const FIGURE = (cls) => `
+    <ellipse class="d-shade" cx="0" cy="-2" rx="34" ry="6"/>
+    <path class="d-paper" d="M -30 0 Q -32 -24 -12 -30 L 14 -30 Q 32 -24 30 0 Z"/>
+    <g class="${cls}__upper" style="transform-origin: 0px -30px">
+      <path class="d-paper" d="M -22 -30 L -24 -92 Q 0 -104 24 -92 L 22 -30 Z"/>
+      <path class="d-thin" d="M 0 -97 L 0 -44" opacity="0.45"/>
+      <path class="d-tube-out" stroke-width="13" d="M -20 -86 Q -30 -118 -8 -140 L 0 -146"/>
+      <path class="d-tube-out" stroke-width="13" d="M 20 -86 Q 30 -118 8 -140 L 0 -146"/>
+      <path class="d-tube-in" stroke-width="9" d="M -20 -86 Q -30 -118 -8 -140 L 0 -146"/>
+      <path class="d-tube-in" stroke-width="9" d="M 20 -86 Q 30 -118 8 -140 L 0 -146"/>
+      <circle class="d-paper" cx="0" cy="-110" r="15"/>
+      <path class="d-thin" d="M -12 -117 Q 0 -128 12 -117"/>
+      <rect class="d-muted" x="-1.2" y="-182" width="2.4" height="36"/>
+      <circle class="${cls}__halo" cx="0" cy="-182" r="7" opacity="0"/>
+      <circle class="${cls}__ember" cx="0" cy="-182" r="2.6" opacity="0"/>
+    </g>`;
 
 export function buildBurner(host) {
   host.innerHTML = `
 <svg class="burner__svg" viewBox="0 0 520 470" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <defs>
-    <radialGradient id="bGold" cx="0.36" cy="0.26" r="0.82">
-      <stop offset="0" stop-color="#fff1b8"/>
-      <stop offset="0.28" stop-color="#e6b84f"/>
-      <stop offset="0.62" stop-color="#9c6a1e"/>
-      <stop offset="0.86" stop-color="#4a2d07"/>
-      <stop offset="1" stop-color="#2a1803"/>
-    </radialGradient>
-    <linearGradient id="bGoldLine" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f8e2a0"/>
-      <stop offset="0.5" stop-color="#c9962b"/>
-      <stop offset="1" stop-color="#4e3006"/>
-    </linearGradient>
-    <linearGradient id="bRim" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff8d8"/>
-      <stop offset="0.45" stop-color="#e0b44c"/>
-      <stop offset="1" stop-color="#5e3d0a"/>
-    </linearGradient>
-    <linearGradient id="bInner" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#140d04"/>
-      <stop offset="1" stop-color="#3f2b10"/>
-    </linearGradient>
-    <radialGradient id="bAsh" cx="0.5" cy="0.35" r="0.65">
-      <stop offset="0" stop-color="#c4b9a6"/>
-      <stop offset="1" stop-color="#6a6052"/>
-    </radialGradient>
-    <linearGradient id="bStick" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#7d4a2a"/>
-      <stop offset="0.45" stop-color="#c98a5c"/>
-      <stop offset="1" stop-color="#6b3f22"/>
-    </linearGradient>
-    <linearGradient id="bShine" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
-      <stop offset="0.5" stop-color="#fff" stop-opacity="0.5"/>
-      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
-    </linearGradient>
-    <linearGradient id="bWood" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#4a2412"/>
-      <stop offset="0.5" stop-color="#2a1208"/>
-      <stop offset="1" stop-color="#140804"/>
-    </linearGradient>
-    <linearGradient id="bSilk" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#5a0d18"/>
-      <stop offset="0.35" stop-color="#9a1b2b"/>
-      <stop offset="0.6" stop-color="#7a1221"/>
-      <stop offset="1" stop-color="#430913"/>
-    </linearGradient>
-    <linearGradient id="bCandle" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#7a0f1c"/>
-      <stop offset="0.4" stop-color="#c8273a"/>
-      <stop offset="1" stop-color="#5c0b16"/>
-    </linearGradient>
-    <radialGradient id="bFlame" cx="0.5" cy="0.75" r="0.6">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="0.25" stop-color="#ffe9a8"/>
-      <stop offset="0.6" stop-color="#ff9a2e"/>
-      <stop offset="1" stop-color="#ff5a1a" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="bBody" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#05070b"/>
-      <stop offset="0.5" stop-color="#0d1118"/>
-      <stop offset="1" stop-color="#05070b"/>
-    </linearGradient>
     <pattern id="bFret" width="16" height="12" patternUnits="userSpaceOnUse">
-      <path d="M0 10 V2 H10 V6 H5 V4 M12 2 H16" fill="none" stroke="#3a2608" stroke-opacity="0.7" stroke-width="1.6"/>
+      <path class="d-thin" d="M0 10 V2 H10 V6 H5 V4 M12 2 H16"/>
     </pattern>
-    <filter id="bGlow" x="-300%" y="-300%" width="700%" height="700%">
-      <feGaussianBlur stdDeviation="4" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <filter id="bFlameGlow" x="-200%" y="-100%" width="500%" height="300%">
-      <feGaussianBlur stdDeviation="5" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <filter id="bSoft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="8"/></filter>
-    <filter id="bSofter" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
-    <!-- the mask lives in the reflection's flipped space: local y 452 is the floor line, local y 288 is the far end -->
-    <linearGradient id="bReflFade" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0" stop-color="#fff" stop-opacity="0.95"/>
-      <stop offset="0.5" stop-color="#fff" stop-opacity="0.3"/>
-      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
-    </linearGradient>
-    <mask id="bReflMask"><rect x="0" y="288" width="520" height="164" fill="url(#bReflFade)"/></mask>
     <clipPath id="bBodyClip">
       <path d="M 150 ${RIM_Y + 4} C 112 322, 168 380, 260 380 C 352 380, 408 322, 370 ${RIM_Y + 4} Z"/>
     </clipPath>
   </defs>
 
-  <!-- the table and candles mirrored in the polished floor -->
-  <g class="reflection" mask="url(#bReflMask)" opacity="0.55" transform="matrix(1 0 0 -0.45 0 655.4)">
-    <rect x="22" y="${TABLE_Y}" width="476" height="18" rx="4" fill="url(#bWood)"/>
-    <rect x="40" y="416" width="18" height="34" rx="3" fill="#1c0c05"/>
-    <rect x="462" y="416" width="18" height="34" rx="3" fill="#1c0c05"/>
-    <rect x="30" y="414" width="460" height="6" rx="2" fill="#0d0603"/>
-    <path d="M 150 ${TABLE_Y} L 370 ${TABLE_Y} L 384 428 Q 260 444 136 428 Z" fill="url(#bSilk)"/>
-    <ellipse cx="260" cy="404" rx="90" ry="10" fill="#ffb347" opacity="0.35"/>
-    ${CANDLES.map((c) => `
-    <ellipse cx="${c.x}" cy="396" rx="20" ry="6" fill="url(#bGoldLine)"/>
-    <rect x="${c.x - 11}" y="322" width="22" height="74" rx="3" fill="url(#bCandle)"/>
-    <path class="rflame" d="M ${c.x} 288 C ${c.x + 7} 298, ${c.x + 8} 310, ${c.x} 318 C ${c.x - 8} 310, ${c.x - 7} 298, ${c.x} 288 Z" fill="url(#bFlame)"/>`).join('')}
-  </g>
-
   <!-- table -->
   <g class="altar-table">
-    <ellipse class="shade" cx="260" cy="440" rx="250" ry="16" fill="#000" opacity="0.6" filter="url(#bSofter)"/>
-    <rect x="22" y="${TABLE_Y}" width="476" height="18" rx="4" fill="url(#bWood)"/>
-    <rect x="22" y="${TABLE_Y}" width="476" height="3" fill="#c9962b" opacity="0.55"/>
-    <rect x="40" y="416" width="18" height="34" rx="3" fill="#1c0c05"/>
-    <rect x="462" y="416" width="18" height="34" rx="3" fill="#1c0c05"/>
-    <rect x="30" y="414" width="460" height="6" rx="2" fill="#0d0603"/>
-    <path d="M 150 ${TABLE_Y} L 370 ${TABLE_Y} L 384 428 Q 260 444 136 428 Z" fill="url(#bSilk)"/>
-    <path d="M 150 ${TABLE_Y} L 370 ${TABLE_Y} L 384 428 Q 260 444 136 428 Z" fill="none" stroke="#e2b655" stroke-opacity="0.55" stroke-width="1.5"/>
-    <path d="M 160 404 L 360 404" stroke="#e2b655" stroke-opacity="0.35" stroke-width="1"/>
+    <ellipse class="d-shade" cx="260" cy="452" rx="250" ry="8"/>
+    <rect class="d-paper" x="40" y="414" width="18" height="36" rx="3"/>
+    <rect class="d-paper" x="462" y="414" width="18" height="36" rx="3"/>
+    <rect class="d-paper" x="30" y="412" width="460" height="7" rx="2"/>
+    <rect class="d-paper" x="22" y="${TABLE_Y}" width="476" height="18" rx="4"/>
+    <path class="d-raised" d="M 150 ${TABLE_Y} L 370 ${TABLE_Y} L 384 428 Q 260 444 136 428 Z"/>
+    <path class="d-thin" d="M 158 406 L 362 406" opacity="0.5"/>
+    <path class="d-thin" d="M 170 ${TABLE_Y} L 162 432 M 350 ${TABLE_Y} L 358 432" opacity="0.35"/>
   </g>
 
   <!-- candles -->
   ${CANDLES.map((c, i) => `
   <g class="candle" data-i="${i}">
-    <ellipse class="shade" cx="${c.x}" cy="${TABLE_Y}" rx="16" ry="5" fill="#000" opacity="0.45" filter="url(#bSoft)"/>
-    <ellipse cx="${c.x}" cy="396" rx="20" ry="6" fill="url(#bGoldLine)"/>
-    <rect x="${c.x - 11}" y="322" width="22" height="74" rx="3" fill="url(#bCandle)"/>
-    <rect x="${c.x - 11}" y="352" width="22" height="4" fill="#e2b655" opacity="0.8"/>
-    <rect x="${c.x - 11}" y="368" width="22" height="2" fill="#e2b655" opacity="0.5"/>
-    <ellipse cx="${c.x}" cy="322" rx="11" ry="3.5" fill="#e04a5a"/>
-    <rect x="${c.x - 1}" y="310" width="2" height="12" fill="#2a1408"/>
+    <ellipse class="d-shade" cx="${c.x + 6}" cy="${TABLE_Y}" rx="20" ry="4"/>
+    <ellipse class="d-paper" cx="${c.x}" cy="396" rx="20" ry="6"/>
+    <rect class="d-paper" x="${c.x - 11}" y="322" width="22" height="74" rx="3"/>
+    <path class="d-thin" d="M ${c.x - 11} 352 h22 M ${c.x - 11} 368 h22" opacity="0.6"/>
+    <ellipse class="d-sunk" cx="${c.x}" cy="322" rx="11" ry="3.5"/>
+    <rect class="d-ink" x="${c.x - 1}" y="310" width="2" height="12"/>
   </g>`).join('')}
 
   <!-- offerings land here -->
   <g class="offerings"></g>
 
   <!-- censer shadow on the runner -->
-  <ellipse class="shade" cx="260" cy="400" rx="110" ry="12" fill="#000" opacity="0.6" filter="url(#bSoft)"/>
+  <ellipse class="d-shade" cx="268" cy="404" rx="110" ry="8"/>
 
   <!-- legs -->
-  <g stroke="url(#bGoldLine)" stroke-width="16" stroke-linecap="round" fill="none">
+  <g class="d-tube-out" stroke-width="17">
     <path d="M 186 358 C 164 374, 162 390, 176 400"/>
     <path d="M 334 358 C 356 374, 358 390, 344 400"/>
     <path d="M 260 374 C 258 386, 258 394, 260 402"/>
   </g>
-  <g fill="#3a2305">
-    <ellipse cx="176" cy="402" rx="12" ry="5"/>
-    <ellipse cx="344" cy="402" rx="12" ry="5"/>
-    <ellipse cx="260" cy="404" rx="12" ry="5"/>
+  <g class="d-tube-in" stroke-width="13">
+    <path d="M 186 358 C 164 374, 162 390, 176 400"/>
+    <path d="M 334 358 C 356 374, 358 390, 344 400"/>
+    <path d="M 260 374 C 258 386, 258 394, 260 402"/>
   </g>
+  <ellipse class="d-paper" cx="176" cy="402" rx="12" ry="5"/>
+  <ellipse class="d-paper" cx="344" cy="402" rx="12" ry="5"/>
+  <ellipse class="d-paper" cx="260" cy="404" rx="12" ry="5"/>
 
   <!-- belly -->
-  <path d="M 150 ${RIM_Y + 4} C 112 322, 168 380, 260 380 C 352 380, 408 322, 370 ${RIM_Y + 4} Z" fill="url(#bGold)"/>
+  <path class="d-paper" d="M 150 ${RIM_Y + 4} C 112 322, 168 380, 260 380 C 352 380, 408 322, 370 ${RIM_Y + 4} Z"/>
   <g clip-path="url(#bBodyClip)">
-    <ellipse class="soft" cx="208" cy="268" rx="46" ry="54" fill="#fff" opacity="0.2" filter="url(#bSoft)"/>
-    <ellipse class="soft" cx="196" cy="256" rx="12" ry="20" fill="#fff" opacity="0.5" filter="url(#bSoft)"/>
-    <ellipse class="soft" cx="260" cy="392" rx="140" ry="50" fill="#120a01" opacity="0.8" filter="url(#bSoft)"/>
-    <ellipse class="soft" cx="392" cy="300" rx="24" ry="76" fill="#3fb4ff" opacity="0.14" filter="url(#bSoft)"/>
-    <ellipse class="soft" cx="130" cy="310" rx="18" ry="70" fill="#3fb4ff" opacity="0.08" filter="url(#bSoft)"/>
-    <path d="M 118 290 Q 260 334 402 290 L 402 306 Q 260 350 118 306 Z" fill="url(#bFret)" opacity="0.9"/>
-    <path d="M 118 290 Q 260 334 402 290" stroke="#2a1803" stroke-opacity="0.5" stroke-width="1.5" fill="none"/>
-    <path d="M 118 306 Q 260 350 402 306" stroke="#2a1803" stroke-opacity="0.5" stroke-width="1.5" fill="none"/>
-    <path d="M 118 287 Q 260 331 402 287" stroke="#fff" stroke-opacity="0.18" stroke-width="1" fill="none"/>
-    <g stroke="#2e1c05" stroke-opacity="0.6" stroke-width="2" fill="none" stroke-linecap="round">
+    <path d="M 118 290 Q 260 334 402 290 L 402 306 Q 260 350 118 306 Z" fill="url(#bFret)" opacity="0.7"/>
+    <path class="d-thin" d="M 118 290 Q 260 334 402 290"/>
+    <path class="d-thin" d="M 118 306 Q 260 350 402 306"/>
+    <g class="d-thin" opacity="0.7">
       <path d="M 208 326 c 6 -10 18 -10 22 0 c 8 -8 20 -2 18 8 c 8 2 8 12 0 14 h -40 c -10 0 -10 -14 0 -22 z"/>
       <path d="M 276 326 c 6 -10 18 -10 22 0 c 8 -8 20 -2 18 8 c 8 2 8 12 0 14 h -40 c -10 0 -10 -14 0 -22 z"/>
     </g>
-    <rect class="burner__shine" x="-140" y="220" width="90" height="190" fill="url(#bShine)" opacity="0.32" transform="skewX(-18)"/>
+    <path class="d-thin" d="M 168 262 Q 160 300 178 334" opacity="0.4"/>
+    <rect class="burner__shine" x="-140" y="220" width="90" height="190"/>
   </g>
+  <path class="d-line" d="M 150 ${RIM_Y + 4} C 112 322, 168 380, 260 380 C 352 380, 408 322, 370 ${RIM_Y + 4}"/>
 
   <!-- rim -->
-  <ellipse cx="260" cy="${RIM_Y}" rx="124" ry="29" fill="url(#bRim)"/>
-  <ellipse cx="260" cy="${RIM_Y}" rx="124" ry="29" fill="none" stroke="#4a2e07" stroke-opacity="0.55" stroke-width="1.5"/>
-  <ellipse cx="260" cy="${RIM_Y - 3}" rx="124" ry="29" fill="none" stroke="#fff" stroke-opacity="0.35" stroke-width="1.2"/>
-  <ellipse cx="260" cy="${RIM_Y - 1}" rx="102" ry="20" fill="url(#bInner)"/>
-  <ellipse cx="260" cy="${RIM_Y + 1}" rx="90" ry="13" fill="url(#bAsh)"/>
+  <ellipse class="d-paper" cx="260" cy="${RIM_Y}" rx="124" ry="29"/>
+  <ellipse class="d-sunk" cx="260" cy="${RIM_Y - 1}" rx="102" ry="20"/>
+  <ellipse class="d-ash" cx="260" cy="${RIM_Y + 2}" rx="88" ry="12"/>
 
   <!-- ears -->
-  <g stroke="url(#bGoldLine)" stroke-width="12" stroke-linecap="round" fill="none">
+  <g class="d-tube-out" stroke-width="13">
     <path d="M 150 ${RIM_Y - 4} C 138 200, 176 194, 180 ${RIM_Y - 8}"/>
     <path d="M 370 ${RIM_Y - 4} C 382 200, 344 194, 340 ${RIM_Y - 8}"/>
   </g>
-  <g stroke="#fff" stroke-opacity="0.3" stroke-width="2.5" stroke-linecap="round" fill="none">
-    <path d="M 150 ${RIM_Y - 6} C 138 198, 176 192, 180 ${RIM_Y - 10}"/>
-    <path d="M 370 ${RIM_Y - 6} C 382 198, 344 192, 340 ${RIM_Y - 10}"/>
+  <g class="d-tube-in" stroke-width="9">
+    <path d="M 150 ${RIM_Y - 4} C 138 200, 176 194, 180 ${RIM_Y - 8}"/>
+    <path d="M 370 ${RIM_Y - 4} C 382 200, 344 194, 340 ${RIM_Y - 8}"/>
   </g>
-
 </svg>
 
-<!-- Everything that moves lives here, so the censer above (and its blur filters) is painted once.
-     Same viewBox, same box, and the gradients and filters are shared through the document. -->
+<!-- Everything that moves lives here, so the censer above is painted once. Same viewBox, same box. -->
 <svg class="burner__svg burner__svg--live" viewBox="0 0 520 470" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <!-- candle flames -->
   ${CANDLES.map((c) => `
   <g class="flame" style="transform-origin: ${c.x}px 320px" opacity="0">
-    <ellipse class="soft" cx="${c.x}" cy="306" rx="12" ry="20" fill="#ff8a2a" opacity="0.35" filter="url(#bFlameGlow)"/>
-    <path d="M ${c.x} 288 C ${c.x + 7} 298, ${c.x + 8} 310, ${c.x} 318 C ${c.x - 8} 310, ${c.x - 7} 298, ${c.x} 288 Z" fill="url(#bFlame)"/>
+    <ellipse class="soft d-ember-soft" cx="${c.x}" cy="304" rx="13" ry="20"/>
+    <path class="d-flame" d="M ${c.x} 288 C ${c.x + 7} 298, ${c.x + 8} 310, ${c.x} 318 C ${c.x - 8} 310, ${c.x - 7} 298, ${c.x} 288 Z"/>
   </g>`).join('')}
 
   <!-- sticks -->
   <g class="burner__sticks">
     ${STICKS.map((s, i) => `
     <g class="stick" data-i="${i}" transform="rotate(${s.lean} ${s.x} ${STICK_BOTTOM})">
-      <rect class="stick__body" x="${s.x - STICK_W / 2}" y="${s.top}" width="${STICK_W}" height="${STICK_BOTTOM - s.top}" rx="2" fill="url(#bStick)"/>
-      <rect class="stick__ash" x="${s.x - STICK_W / 2 - 0.5}" y="${s.top}" width="${STICK_W + 1}" height="0" rx="2.5" fill="#a9a29a"/>
-      <circle class="stick__halo soft" cx="${s.x}" cy="${s.top}" r="10" fill="#ff7a1a" opacity="0" filter="url(#bSoft)"/>
-      <circle class="stick__ember" cx="${s.x}" cy="${s.top}" r="4" fill="#fff0c0" filter="url(#bGlow)" opacity="0"/>
+      <rect class="stick__body" x="${s.x - STICK_W / 2}" y="${s.top}" width="${STICK_W}" height="${STICK_BOTTOM - s.top}" rx="2"/>
+      <rect class="stick__ash" x="${s.x - STICK_W / 2 - 0.5}" y="${s.top}" width="${STICK_W + 1}" height="0" rx="2.5"/>
+      <circle class="stick__halo soft" cx="${s.x}" cy="${s.top}" r="10" opacity="0"/>
+      <circle class="stick__ember" cx="${s.x}" cy="${s.top}" r="4" opacity="0"/>
     </g>`).join('')}
   </g>
 
   <!-- the ops team, kneeling, backs to us, incense raised -->
   ${[{ x: 34, s: 1.18, flip: 1 }, { x: 486, s: 1.18, flip: -1 }].map((d, i) => `
-  <g class="devotee" data-i="${i}" transform="translate(${d.x} 470) scale(${d.flip * d.s} ${d.s})">
-    <ellipse class="shade" cx="0" cy="-2" rx="34" ry="7" fill="#000" opacity="0.5" filter="url(#bSoft)"/>
-    <!-- legs folded under -->
-    <path d="M -30 0 Q -32 -24 -12 -30 L 14 -30 Q 32 -24 30 0 Z" fill="#06080c"/>
-    <path d="M -30 0 Q -32 -24 -12 -30" class="rim" stroke-opacity="0.18" stroke-width="2" fill="none"/>
-    <g class="devotee__upper" style="transform-origin: 0px -30px">
-      <!-- torso -->
-      <path d="M -22 -30 L -24 -92 Q 0 -104 24 -92 L 22 -30 Z" fill="url(#bBody)"/>
-      <path d="M -24 -92 Q 0 -104 24 -92" class="rim" stroke-opacity="0.35" stroke-width="2" fill="none"/>
-      <path d="M -22 -30 L -24 -92" class="rim" stroke-opacity="0.12" stroke-width="2" fill="none"/>
-      <!-- arms up, palms together -->
-      <path d="M -20 -86 Q -30 -118 -8 -140 L 0 -146" stroke="#06080c" stroke-width="11" stroke-linecap="round" fill="none"/>
-      <path d="M 20 -86 Q 30 -118 8 -140 L 0 -146" stroke="#06080c" stroke-width="11" stroke-linecap="round" fill="none"/>
-      <path d="M -8 -140 L 0 -146" class="rim" stroke-opacity="0.25" stroke-width="2" fill="none"/>
-      <!-- head -->
-      <circle cx="0" cy="-110" r="15" fill="#06080c"/>
-      <path d="M -13 -116 Q 0 -128 13 -116" class="rim" stroke-opacity="0.3" stroke-width="2" fill="none"/>
-      <!-- incense held in the hands -->
-      <rect x="-1.2" y="-182" width="2.4" height="38" fill="#b57a50"/>
-      <circle class="devotee__ember" cx="0" cy="-182" r="2.6" fill="#fff0c0" filter="url(#bGlow)" opacity="0"/>
-    </g>
+  <g class="devotee" data-i="${i}" transform="translate(${d.x} 470) scale(${d.flip * d.s} ${d.s})">${FIGURE('devotee')}
   </g>`).join('')}
 </svg>`;
 
@@ -320,7 +212,7 @@ export function buildBurner(host) {
   let burnTl = null;
   let flickerCall = null;
 
-  // Anything that moves inside this SVG repaints the whole censer, blur filters and
+  // Anything that moves inside this SVG repaints the whole censer, pattern and
   // all, so in lite mode the idle motion stops and the flames update 6 times a second.
   function startShine() {
     gsap.killTweensOf(shine);
@@ -473,7 +365,7 @@ export function buildBurner(host) {
       }
       const el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       el.setAttribute('class', 'offering');
-      el.innerHTML = `<ellipse class="shade" cx="0" cy="0" rx="16" ry="4" fill="#000" opacity="0.5" filter="url(#bSoft)"/>${def.svg}`;
+      el.innerHTML = `<ellipse class="d-shade" cx="4" cy="0" rx="18" ry="3.5"/>${def.svg}`;
       el.style.transformOrigin = `${SLOTS[slot]}px ${TABLE_Y}px`;
       gsap.set(el, { x: SLOTS[slot], y: TABLE_Y, scale: 1.3 });
       offeringsG.appendChild(el);

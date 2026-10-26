@@ -1,9 +1,10 @@
 /**
- * Light in the air: dust motes drifting through the beam above the altar,
- * and sparks that fly up when the incense catches or the bowl rings.
- * Additive dots on one canvas; brighter while the altar burns.
+ * Dust in the air: specks of ink drifting above the altar, and sparks that
+ * fly up when the incense catches or the bowl rings. Dots on one canvas;
+ * a little denser while the altar burns.
  */
 import gsap from 'gsap';
+import { onPalette } from './palette.js';
 
 const MOTES = 70;
 
@@ -14,7 +15,7 @@ export class Motes {
     this.motes = [];
     this.sparks = [];
     this.glow = 0.45; // tweened towards 1 when lit
-    this.rgb = '232,181,77';
+    onPalette((p) => { this.rgb = p.ink; this.spark = p.flame; });
     this.lite = false;
     this.acc = 0;
     this.resize();
@@ -55,11 +56,6 @@ export class Motes {
     };
   }
 
-  /** Pick up the theme's accent colour (call after the theme changes). */
-  syncColor() {
-    this.rgb = getComputedStyle(document.body).getPropertyValue('--accent-rgb').trim().split(/\s+/).join(',') || '232,181,77';
-  }
-
   setLit(lit) {
     gsap.to(this, { glow: lit ? 1 : 0.45, duration: 3, ease: 'sine.inOut' });
   }
@@ -93,7 +89,6 @@ export class Motes {
     const { ctx, dpr } = this;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, this.w, this.h);
-    ctx.globalCompositeOperation = 'lighter';
     const rgb = this.rgb;
 
     for (let i = 0; i < this.motes.length; i++) {
@@ -101,7 +96,7 @@ export class Motes {
       m.x += (m.vx + Math.sin(time * 0.6 + m.tw) * 4) * dt;
       m.y += m.vy * dt;
       if (m.y < -10) { this.motes[i] = this.mote(false); continue; }
-      const a = m.a * this.glow * (0.6 + 0.4 * Math.sin(time * 2 + m.tw));
+      const a = 0.5 * m.a * this.glow * (0.6 + 0.4 * Math.sin(time * 2 + m.tw));
       ctx.fillStyle = `rgba(${rgb},${a.toFixed(3)})`;
       ctx.beginPath();
       ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
@@ -117,11 +112,10 @@ export class Motes {
       s.x += s.vx * dt;
       s.y += s.vy * dt;
       const k = 1 - s.life / s.ttl;
-      ctx.fillStyle = `rgba(255,${Math.round(170 + 80 * k)},${Math.round(90 * k)},${(k * 0.9).toFixed(3)})`;
+      ctx.fillStyle = `rgba(${this.spark},${(k * 0.9).toFixed(3)})`;
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r * (0.5 + k), 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.globalCompositeOperation = 'source-over';
   }
 }

@@ -50,20 +50,22 @@ shrine.
 - **Ranks**: karma promotes you from lurker in #incidents to enlightened SRE,
   with a toast and a shower of petals at every promotion.
 - **Effects levels**: phones, small tablets and anything that reports a weak
-  CPU get *lite* effects (no blur filters, blend layers or backdrop blur, fewer
-  particles, flames that flicker at 6 fps instead of 60). Desktops start with
+  CPU get *lite* effects (no fog, fewer particles, flames that flicker at
+  6 fps instead of 60). Desktops start with
   the full set and drop to lite for the session if the frame rate falls below
   40 fps after the intro. Pick one yourself under Customize, or with `?fx=lite`
   / `?fx=full`. Lite mode, and any shrine nobody has touched for 90 seconds,
   runs the whole scene at 30 fps; a cold altar draws nothing at all.
-- **Atmosphere**: a camera push down the server corridor on load, light rays
-  and dust over the altar, red paper lanterns, sparks when the incense
-  catches, golden shockwaves across the floor when the bowl rings, and the
-  whole room warming up while it burns.
-- **Drawn, not downloaded**: the incense burner is inline SVG (the sticks
-  really burn down), the server room is procedural, the smoke is painted at
-  runtime, and the ambient music is synthesized in the browser.
-- **Customizable**: title, subtitle, "back at" time, four themes, toggles for
+- **Atmosphere**: a camera push down the server corridor on load, dust over
+  the altar, sparks when the incense catches, and cobalt shockwaves across the
+  floor when the bowl rings.
+- **Drawn, not downloaded**: the whole scene is an ink line drawing on
+  notebook paper, in the Wot Da Fong brand. The incense burner is inline SVG
+  (the sticks really burn down), the server room is procedural, the smoke is
+  painted at runtime, and the ambient music is synthesized in the browser.
+- **Light and dark**: paper by day, a night vigil after dark. It follows the
+  system setting unless you pick one.
+- **Customizable**: title, subtitle, "back at" time, theme, toggles for
   music/effects/petals/fog. Open the settings panel or use URL params.
 - **Keyboard**: `L` light · `B` bowl · `P` bow · `O` offer · `Space` breathe ·
   `M` mute · `T` theme.
@@ -77,10 +79,10 @@ shrine.
 | `title`    | any text                                 | `?title=Back+in+5+minutes`     |
 | `subtitle` | any text                                 | `?subtitle=Deploying+v2.0`     |
 | `eta`      | ISO 8601 date/time                       | `?eta=2026-10-14T18:30:00Z`    |
-| `theme`    | `gold` `jade` `sakura` `ember`           | `?theme=jade`                  |
+| `theme`    | `auto` `light` `dark`                    | `?theme=dark`                  |
 | `music` `sfx` `petals` `fog` | `1` / `0`              | `?petals=0&fog=0`              |
 
-They work on room pages too: `/r/serene-rack-42?theme=jade`.
+They work on room pages too: `/r/serene-rack-42?theme=dark`.
 
 ## Develop
 
@@ -118,12 +120,14 @@ src/petals.js       falling petals (GSAP)
 src/lanterns.js     prayer lanterns (GSAP)
 src/congregation.js teammates kneeling at the altar
 src/motes.js        dust in the light, sparks
-src/hanging.js      red paper lanterns
 src/vitals.js       rack 42 heart monitor
 src/config.js       settings: URL params > localStorage > defaults
 src/strings.js      brand name, copy and mantras
-src/styles.css      design tokens, themes, layout
+src/styles.css      design tokens, light and dark themes, layout
+src/palette.js      theme colours for the canvas layers
+src/icons.js        line icons for the dock, tray and pings
 public/favicon.svg  the mark
+public/wotdafong-*.svg  the Wot Da Fong P?! mark for the credit line
 worker/index.js     Cloudflare Worker: routes, /new, API, asset headers
 worker/shrine.js    Shrine Durable Object: one per room
 wrangler.jsonc      Worker + Durable Object config

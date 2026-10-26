@@ -4,18 +4,19 @@
  * (upscaled by CSS), 20 times a second. Fog moves slowly; nobody can tell.
  */
 import gsap from 'gsap';
+import { onPalette } from './palette.js';
 
 const SCALE = 0.35;
 const FPS = 20;
 const STEP = 3; // the drift speeds were tuned at 50 units per 60 fps tick, i.e. 3 per ms
 
-function makeSprite(size = 128) {
+function makeSprite(rgb, size = 128) {
   const c = document.createElement('canvas');
   c.width = c.height = size;
   const ctx = c.getContext('2d');
   const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  g.addColorStop(0, 'rgba(226,230,236,1)');
-  g.addColorStop(1, 'rgba(226,230,236,0)');
+  g.addColorStop(0, `rgba(${rgb},1)`);
+  g.addColorStop(1, `rgba(${rgb},0)`);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
   return c;
@@ -29,7 +30,7 @@ export class Fog {
     this.enabled = true;
     this.opacity = 0;
     this.acc = 0;
-    this.sprite = makeSprite();
+    onPalette((p) => { this.sprite = makeSprite(p.ink); });
     this.resize();
     window.addEventListener('resize', () => this.resize());
     gsap.ticker.add((time, dt) => this.frame(dt));

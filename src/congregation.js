@@ -7,6 +7,7 @@
  * Sized in the burner's own units so the people always match the altar.
  */
 import gsap from 'gsap';
+import { FIGURE } from './burner.js';
 
 const VB_H = 470;      // the burner's viewBox height
 const SCALE = 1.18;    // same size as the ops team drawn into the burner
@@ -16,23 +17,8 @@ const GAP = 76;
 const MIN_GAP = 46;
 const EDGE = 34;
 
-const FIGURE = `
-<svg class="kneeler__svg" viewBox="-44 -196 88 204" aria-hidden="true">
-  <ellipse cx="0" cy="-2" rx="34" ry="7" fill="#000" opacity="0.55"/>
-  <path d="M -30 0 Q -32 -24 -12 -30 L 14 -30 Q 32 -24 30 0 Z" fill="#06080c"/>
-  <path class="kneeler__rim" d="M -30 0 Q -32 -24 -12 -30" stroke-opacity="0.25" stroke-width="2" fill="none"/>
-  <g class="kneeler__upper">
-    <path d="M -22 -30 L -24 -92 Q 0 -104 24 -92 L 22 -30 Z" fill="#090c12"/>
-    <path class="kneeler__rim" d="M -24 -92 Q 0 -104 24 -92" stroke-opacity="0.5" stroke-width="2" fill="none"/>
-    <path class="kneeler__rim" d="M -22 -30 L -24 -92" stroke-opacity="0.18" stroke-width="2" fill="none"/>
-    <path d="M -20 -86 Q -30 -118 -8 -140 L 0 -146" stroke="#06080c" stroke-width="11" stroke-linecap="round" fill="none"/>
-    <path d="M 20 -86 Q 30 -118 8 -140 L 0 -146" stroke="#06080c" stroke-width="11" stroke-linecap="round" fill="none"/>
-    <circle cx="0" cy="-110" r="15" fill="#06080c"/>
-    <path class="kneeler__rim" d="M -13 -116 Q 0 -128 13 -116" stroke-opacity="0.45" stroke-width="2" fill="none"/>
-    <rect x="-1.2" y="-182" width="2.4" height="38" fill="#b57a50"/>
-    <circle class="kneeler__halo" cx="0" cy="-182" r="7" opacity="0"/>
-    <circle class="kneeler__ember" cx="0" cy="-182" r="2.6" fill="#fff0c0" opacity="0"/>
-  </g>
+const FIGURE_SVG = `
+<svg class="kneeler__svg" viewBox="-44 -196 88 204" aria-hidden="true">${FIGURE('kneeler')}
 </svg>`;
 
 export class Congregation {
@@ -70,7 +56,7 @@ export class Congregation {
   add(person, mine) {
     const el = document.createElement('div');
     el.className = 'kneeler';
-    el.innerHTML = `<div class="kneeler__tag"><span class="kneeler__avatar"></span><span class="kneeler__name"></span></div>${FIGURE}`;
+    el.innerHTML = `<div class="kneeler__tag"><span class="kneeler__avatar"></span><span class="kneeler__name"></span></div>${FIGURE_SVG}`;
     this.host.appendChild(el);
     const item = {
       el,
