@@ -219,8 +219,8 @@ export function buildServerRoom(host) {
   let acc = 0;
   let lite = false;
   gsap.ticker.add((time, dt) => {
-    acc += dt;
-    if (acc < (lite ? 0.28 : 0.09)) return;
+    acc += dt; // ms
+    if (acc < (lite ? 300 : 150)) return;
     acc = 0;
     if (document.visibilityState !== 'visible') return;
     for (let i = 0; i < (lite ? 6 : 14); i++) {

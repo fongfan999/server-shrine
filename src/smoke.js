@@ -5,8 +5,10 @@
  */
 import gsap from 'gsap';
 
-const LIFE = 5200;         // ms a ribbon point lives
-const EMIT_EVERY = 22;     // ms between ribbon points
+const LIFE = 5200;         // sim-ms a ribbon point lives
+const EMIT_EVERY = 22;     // sim-ms between ribbon points
+const STEP = 3;            // sim-ms per real ms: the look was tuned at 50 per 60 fps tick
+const TIPS_EVERY = 100;    // real ms between re-reading the ember positions from the DOM
 const RISE = 0.075;        // px per ms
 const MAX_WIDTH = 9;       // px half-width at the end of life
 
@@ -56,6 +58,18 @@ export class IncenseSmoke {
     this.canvas.width = Math.round(this.w * this.dpr);
     this.canvas.height = Math.round(this.h * this.dpr);
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.tipsCache = null;
+    this.cleared = false;
+  }
+
+  /** The ember tips in canvas space, re-read from the DOM a few times a second rather than every frame. */
+  tips() {
+    if (!this.tipsCache || performance.now() - this.tipsAt > TIPS_EVERY) {
+      const c = this.canvas.getBoundingClientRect();
+      this.tipsCache = this.emitters().map((e) => ({ x: e.x - c.left, y: e.y - c.top }));
+      this.tipsAt = performance.now();
+    }
+    return this.tipsCache;
   }
 
   /** Lite mode: a 1x canvas, half the ribbon points, no canvas shadows. */
@@ -77,12 +91,12 @@ export class IncenseSmoke {
   /** A disturbance: the ribbons swirl for a moment (tap on the burner, a breath). */
   puff(strength = 1) {
     gsap.fromTo(this, { gust: 1.6 * strength }, { gust: 0, duration: 2.2, ease: 'power2.out', overwrite: 'auto' });
-    const c = this.canvas.getBoundingClientRect();
-    for (const e of this.emitters()) {
+    this.tipsCache = null;
+    for (const e of this.tips()) {
       for (let i = 0; i < 4 * strength; i++) {
         this.puffs.push({
-          x: e.x - c.left + gsap.utils.random(-6, 6),
-          y: e.y - c.top - gsap.utils.random(0, 30),
+          x: e.x + gsap.utils.random(-6, 6),
+          y: e.y - gsap.utils.random(0, 30),
           vx: gsap.utils.random(-0.05, 0.05),
           vy: gsap.utils.random(-0.06, -0.03),
           age: 0, life: gsap.utils.random(2500, 3800),
@@ -94,14 +108,18 @@ export class IncenseSmoke {
   }
 
   frame(dt) {
-    const ms = Math.min(dt * 1000, 50);
+    const ms = Math.min(dt, 100) * STEP;
     this.time += ms;
     const ctx = this.ctx;
+    // A cold altar draws nothing, so don't even clear: a cleared canvas is still uploaded to the GPU.
+    if (!this.running && this.puffs.length === 0 && this.sparks.length === 0) {
+      if (!this.cleared) { ctx.clearRect(0, 0, this.w, this.h); this.cleared = true; }
+      return;
+    }
+    this.cleared = false;
     ctx.clearRect(0, 0, this.w, this.h);
-    if (!this.running && this.puffs.length === 0 && this.sparks.length === 0) return;
 
-    const c = this.canvas.getBoundingClientRect();
-    const tips = this.emitters().map((e) => ({ x: e.x - c.left, y: e.y - c.top }));
+    const tips = this.tips();
     while (this.ribbons.length < tips.length) {
       this.ribbons.push({ pts: [], acc: 0, phase: gsap.utils.random(0, Math.PI * 2), spark: gsap.utils.random(400, 1200) });
     }

@@ -16,6 +16,14 @@ class SoundKit {
     this.musicEnabled = true;
     this.muted = false;
     this.unlocked = false;
+    this.lite = false;
+    this.conv = null;
+  }
+
+  /** Lite mode: a shorter impulse response. Convolution is the heaviest node in the graph. */
+  setLite(on) {
+    this.lite = on;
+    if (this.conv) this.conv.buffer = this._impulse(on ? 1.2 : 2.8, 2.2);
   }
 
   /** Must be called from a user gesture. Safe to call repeatedly. */
@@ -30,7 +38,8 @@ class SoundKit {
       const dry = this.ctx.createGain(); dry.gain.value = 0.85;
       const wet = this.ctx.createGain(); wet.gain.value = 0.32;
       const conv = this.ctx.createConvolver();
-      conv.buffer = this._impulse(2.8, 2.2);
+      this.conv = conv;
+      conv.buffer = this._impulse(this.lite ? 1.2 : 2.8, 2.2);
       this.master.connect(dry).connect(this.ctx.destination);
       this.master.connect(conv).connect(wet).connect(this.ctx.destination);
       this.music = new AmbientMusic(this.ctx, this.master);

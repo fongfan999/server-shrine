@@ -54,7 +54,8 @@ shrine.
   particles, flames that flicker at 6 fps instead of 60). Desktops start with
   the full set and drop to lite for the session if the frame rate falls below
   40 fps after the intro. Pick one yourself under Customize, or with `?fx=lite`
-  / `?fx=full`.
+  / `?fx=full`. Lite mode, and any shrine nobody has touched for 90 seconds,
+  runs the whole scene at 30 fps; a cold altar draws nothing at all.
 - **Atmosphere**: a camera push down the server corridor on load, light rays
   and dust over the altar, red paper lanterns, sparks when the incense
   catches, golden shockwaves across the floor when the bowl rings, and the

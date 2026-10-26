@@ -1,10 +1,25 @@
 /**
  * Ambient fog: large soft blobs drifting slowly across the whole viewport.
- * Rendered as radial gradients on a low-res canvas (upscaled) for cheapness.
+ * One pre-rendered radial sprite, drawn scaled onto a low-res canvas
+ * (upscaled by CSS), 20 times a second. Fog moves slowly; nobody can tell.
  */
 import gsap from 'gsap';
 
 const SCALE = 0.35;
+const FPS = 20;
+const STEP = 3; // the drift speeds were tuned at 50 units per 60 fps tick, i.e. 3 per ms
+
+function makeSprite(size = 128) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, 'rgba(226,230,236,1)');
+  g.addColorStop(1, 'rgba(226,230,236,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  return c;
+}
 
 export class Fog {
   constructor(canvas) {
@@ -13,6 +28,8 @@ export class Fog {
     this.blobs = [];
     this.enabled = true;
     this.opacity = 0;
+    this.acc = 0;
+    this.sprite = makeSprite();
     this.resize();
     window.addEventListener('resize', () => this.resize());
     gsap.ticker.add((time, dt) => this.frame(dt));
@@ -53,20 +70,21 @@ export class Fog {
       this.cleared = true;
       return;
     }
+    this.acc += dt;
+    if (this.acc < 1000 / FPS) return;
+    const step = Math.min(this.acc, 200) * STEP;
+    this.acc = 0;
     this.cleared = false;
-    dt = Math.min(dt * 1000, 50);
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.w, this.h);
     for (let i = 0; i < this.blobs.length; i++) {
       const b = this.blobs[i];
-      b.x += b.vx * dt;
-      b.y += b.vy * dt;
+      b.x += b.vx * step;
+      b.y += b.vy * step;
       if (b.x - b.r > this.w) this.blobs[i] = this.makeBlob(false);
-      const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
-      g.addColorStop(0, `rgba(226,230,236,${b.a * this.opacity})`);
-      g.addColorStop(1, 'rgba(226,230,236,0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
+      ctx.globalAlpha = b.a * this.opacity;
+      ctx.drawImage(this.sprite, b.x - b.r, b.y - b.r, b.r * 2, b.r * 2);
     }
+    ctx.globalAlpha = 1;
   }
 }

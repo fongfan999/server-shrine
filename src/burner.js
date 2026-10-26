@@ -325,7 +325,7 @@ export function buildBurner(host) {
   function startShine() {
     gsap.killTweensOf(shine);
     if (lite) { gsap.set(shine, { attr: { x: -140 } }); return; }
-    gsap.to(shine, { attr: { x: 560 }, duration: 8, repeat: -1, repeatDelay: 16, ease: 'sine.inOut' });
+    gsap.to(shine, { attr: { x: 560 }, duration: 8, repeat: -1, repeatDelay: 16, ease: 'steps(60)' });
   }
 
   /** The devotees sway almost imperceptibly while they wait. */
@@ -333,7 +333,7 @@ export function buildBurner(host) {
     devotees.forEach((d, i) => {
       gsap.killTweensOf(d, 'rotation');
       if (lite) { gsap.set(d, { rotation: 0 }); return; }
-      gsap.to(d, { rotation: i ? -1.5 : 1.5, duration: 3.4, yoyo: true, repeat: -1, ease: 'sine.inOut', delay: i * 0.7 });
+      gsap.to(d, { rotation: i ? -1.5 : 1.5, duration: 3.4, yoyo: true, repeat: -1, ease: 'steps(40)', delay: i * 0.7 });
     });
   }
 
@@ -353,11 +353,12 @@ export function buildBurner(host) {
       step();
       return;
     }
+    // A transform on an SVG element is a layout, so the flames step 17 times a second rather than 60.
     flames.forEach((f) => gsap.to(f, {
       scaleY: () => gsap.utils.random(0.85, 1.15),
       scaleX: () => gsap.utils.random(0.9, 1.1),
       rotation: () => gsap.utils.random(-5, 5),
-      duration: 0.18, repeat: -1, repeatRefresh: true, ease: 'sine.inOut',
+      duration: 0.18, repeat: -1, repeatRefresh: true, ease: 'steps(3)',
     }));
   }
 
@@ -367,10 +368,10 @@ export function buildBurner(host) {
     all.forEach((e) => gsap.killTweensOf(e, 'opacity'));
     if (lite) { gsap.set(sticks.map((s) => s.ember), { opacity: 1 }); gsap.set(devoteeEmbers, { opacity: 0.8 }); return; }
     sticks.forEach((s, i) => {
-      gsap.to(s.ember, { opacity: 0.55, duration: gsap.utils.random(0.4, 0.8), yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 1 + i * 0.3 });
-      gsap.to(s.halo, { opacity: 0.3, duration: gsap.utils.random(0.5, 1), yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 1.2 + i * 0.3 });
+      gsap.to(s.ember, { opacity: 0.55, duration: gsap.utils.random(0.4, 0.8), yoyo: true, repeat: -1, ease: 'steps(8)', delay: 1 + i * 0.3 });
+      gsap.to(s.halo, { opacity: 0.3, duration: gsap.utils.random(0.5, 1), yoyo: true, repeat: -1, ease: 'steps(8)', delay: 1.2 + i * 0.3 });
     });
-    devoteeEmbers.forEach((e, i) => gsap.to(e, { opacity: 0.5, duration: 0.6, yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 1.5 + i * 0.3 }));
+    devoteeEmbers.forEach((e, i) => gsap.to(e, { opacity: 0.5, duration: 0.6, yoyo: true, repeat: -1, ease: 'steps(8)', delay: 1.5 + i * 0.3 }));
   }
 
   startShine();
@@ -397,13 +398,15 @@ export function buildBurner(host) {
       burnTl.call(startEmbers, null, 1.4);
       sticks.forEach((s, i) => {
         const burnTo = STICK_BOTTOM - 50 - i * 6;
+        // Every attribute write forces an SVG layout, so the burn-down steps once a second (under a pixel each).
+        const slow = `steps(${Math.max(1, Math.round(seconds))})`;
         burnTl
           .fromTo(s.ember, { opacity: 0, attr: { r: 0 } }, { opacity: 1, attr: { r: 4 }, duration: 0.5, ease: 'back.out(3)' }, 0.5 + i * 0.18)
           .to(s.halo, { opacity: 0.6, duration: 0.8 }, 0.55 + i * 0.18)
-          .to(s.halo, { attr: { cy: burnTo }, duration: seconds, ease: 'none' }, 1)
-          .to(s.body, { attr: { y: burnTo, height: STICK_BOTTOM - burnTo }, duration: seconds, ease: 'none' }, 1)
-          .to(s.ember, { attr: { cy: burnTo }, duration: seconds, ease: 'none' }, 1)
-          .to(s.ash, { attr: { y: burnTo - 10, height: 10 }, duration: seconds, ease: 'none' }, 1);
+          .to(s.halo, { attr: { cy: burnTo }, duration: seconds, ease: slow }, 1)
+          .to(s.body, { attr: { y: burnTo, height: STICK_BOTTOM - burnTo }, duration: seconds, ease: slow }, 1)
+          .to(s.ember, { attr: { cy: burnTo }, duration: seconds, ease: slow }, 1)
+          .to(s.ash, { attr: { y: burnTo - 10, height: 10 }, duration: seconds, ease: slow }, 1);
       });
     },
 

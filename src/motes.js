@@ -24,8 +24,11 @@ export class Motes {
 
   resize() {
     this.dpr = this.lite ? 1 : Math.min(1.5, devicePixelRatio || 1);
-    this.w = innerWidth;
-    this.h = innerHeight;
+    const r = this.canvas.getBoundingClientRect();
+    this.left = r.left;
+    this.top = r.top;
+    this.w = r.width || innerWidth;
+    this.h = r.height || innerHeight;
     this.canvas.width = Math.round(this.w * this.dpr);
     this.canvas.height = Math.round(this.h * this.dpr);
     this.motes = Array.from({ length: this.lite ? MOTES / 3 : MOTES }, () => this.mote(true));
@@ -63,6 +66,8 @@ export class Motes {
 
   /** Sparks burst up from a screen point. */
   burst(x, y, n = 30, spread = 1) {
+    x -= this.left;
+    y -= this.top;
     for (let i = 0; i < n; i++) {
       const angle = -Math.PI / 2 + gsap.utils.random(-0.9, 0.9) * spread;
       const speed = gsap.utils.random(60, 260);

@@ -88,11 +88,29 @@ function applyFx() {
     motes.setLite(lite);
     petals.setLite(lite);
     congregation.setLite(lite);
+    sound.setLite(lite);
     startRays();
+    applyFrameBudget();
   }
   $('#fx-note').textContent = t(settings.fx === 'auto' ? 'fxNoteAuto' : lite ? 'fxNoteLite' : 'fxNoteFull') + (settings.fx === 'auto' ? ` ${t(lite ? 'fxLite' : 'fxFull')}.` : '');
   $('#fx-seg').querySelectorAll('button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.fx === settings.fx)));
 }
+
+/* ---------- Frame budget: 60 fps while someone is here, 30 fps in lite mode or once nobody has touched the page for a while ---------- */
+const IDLE_AFTER = 90000;
+let idle = false;
+let idleTimer = 0;
+function applyFrameBudget() {
+  gsap.ticker.fps(lite || idle ? 30 : 60);
+}
+function activity() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => { idle = true; applyFrameBudget(); }, IDLE_AFTER);
+  if (idle) { idle = false; applyFrameBudget(); }
+}
+for (const ev of ['pointermove', 'pointerdown', 'keydown', 'wheel', 'touchstart']) window.addEventListener(ev, activity, { passive: true });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') activity(); });
+activity();
 
 /**
  * After the intro, watch the frame rate for a few seconds. A device that can't hold
@@ -987,6 +1005,7 @@ function onShrineMessage(msg) {
       syncAltar(msg.litAt);
       break;
     case 'act':
+      activity(); // the room is alive even if this person is just watching
       syncCounters(msg);
       if (msg.kind === 'light' || msg.by.id === myId) syncAltar(msg.litAt);
       if (msg.by.id !== myId) remoteAct(msg);
