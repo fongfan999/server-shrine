@@ -8,7 +8,7 @@ Inspired by every "I haven't been able to reach the server for an hour" thread,
 and the classic photo of sysadmins praying to a rack with incense. A
 [Wot Da Fong](https://wotdafong.dev/) project.
 
-Open source at [github.com/fongfan999/server-shrine](https://github.com/fongfan999/server-shrine).
+Open source at [github.com/fongfan999/wot-da-shrine](https://github.com/fongfan999/wot-da-shrine).
 Issues and pull requests are welcome.
 
 Built with [Vite](https://vite.dev), [GSAP](https://gsap.com) and the Web Audio
