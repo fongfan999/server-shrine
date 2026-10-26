@@ -9,8 +9,11 @@ export class Petals {
     this.enabled = true;
     this.running = false;
     this.rate = 1; // petals per second
+    this.scale = 1; // 0.5 in lite mode
     this._spawnLoop = null;
   }
+
+  setLite(on) { this.scale = on ? 0.5 : 1; }
 
   start() {
     if (this.running) return;
@@ -18,7 +21,7 @@ export class Petals {
     const loop = () => {
       if (!this.running) return;
       if (this.enabled && document.visibilityState === 'visible') this.spawn();
-      this._spawnLoop = gsap.delayedCall(1 / this.rate + gsap.utils.random(-0.3, 0.3), loop);
+      this._spawnLoop = gsap.delayedCall(1 / (this.rate * this.scale) + gsap.utils.random(-0.3, 0.3), loop);
     };
     loop();
   }
@@ -32,7 +35,7 @@ export class Petals {
 
   /** A gust: spawn a bunch at once. */
   burst(n = 18) {
-    for (let i = 0; i < n; i++) gsap.delayedCall(i * 0.04, () => this.spawn());
+    for (let i = 0; i < Math.round(n * this.scale); i++) gsap.delayedCall(i * 0.04, () => this.spawn());
   }
 
   spawn() {

@@ -6,6 +6,7 @@
  */
 
 export const THEMES = ['gold', 'jade', 'sakura', 'ember'];
+export const FX = ['auto', 'full', 'lite']; // effects: auto picks lite on phones and slow devices
 
 const STORAGE_KEY = 'incense:settings:v2';
 
@@ -18,6 +19,7 @@ export const DEFAULTS = {
   sfx: true,
   petals: true,
   fog: true,
+  fx: 'auto',
 };
 
 const BOOL_KEYS = ['music', 'sfx', 'petals', 'fog'];
@@ -43,6 +45,7 @@ export function loadSettings() {
   }
 
   if (!THEMES.includes(out.theme)) out.theme = DEFAULTS.theme;
+  if (!FX.includes(out.fx)) out.fx = DEFAULTS.fx;
   if (out.eta && Number.isNaN(Date.parse(out.eta))) out.eta = '';
 
   return out;

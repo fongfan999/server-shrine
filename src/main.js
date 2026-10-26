@@ -60,16 +60,88 @@ const vitals = new Vitals($('#ekg'), $('#vitals-bpm'));
 const wishes = new WishBoard($('#ema'));
 const BURN_SECONDS = 600; // keep in sync with worker/shrine.js
 
+/* ---------- Effects level: full, or lite on phones and anything that can't keep up ---------- */
+const LITE_KEY = 'incense:lite:v1'; // this device fell behind once this session: stay lite
+let lite = false;
+let degraded = false;
+try { degraded = sessionStorage.getItem(LITE_KEY) === '1'; } catch { /* ignore */ }
+
+/** Phones and small tablets, and anything that admits to being weak, start lite. */
+function wantsLite() {
+  if (reduceMotion || degraded) return true;
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  const small = Math.min(innerWidth, innerHeight) < 500 || matchMedia('(max-width: 760px)').matches;
+  const weak = (navigator.hardwareConcurrency || 8) <= 2 || (navigator.deviceMemory || 8) <= 2;
+  return (coarse && small) || weak;
+}
+
+function applyFx() {
+  const next = settings.fx === 'auto' ? (wantsLite() ? 'lite' : 'full') : settings.fx;
+  const changed = next !== body.dataset.fx || !applyFx.done;
+  applyFx.done = true;
+  lite = next === 'lite';
+  body.dataset.fx = next;
+  if (changed) {
+    room.setLite(lite);
+    art.setLite(lite);
+    smoke.setLite(lite);
+    motes.setLite(lite);
+    petals.setLite(lite);
+    congregation.setLite(lite);
+    startRays();
+  }
+  $('#fx-note').textContent = t(settings.fx === 'auto' ? 'fxNoteAuto' : lite ? 'fxNoteLite' : 'fxNoteFull') + (settings.fx === 'auto' ? ` ${t(lite ? 'fxLite' : 'fxFull')}.` : '');
+  $('#fx-seg').querySelectorAll('button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.fx === settings.fx)));
+}
+
+/**
+ * After the intro, watch the frame rate for a few seconds. A device that can't hold
+ * a reasonable rate with full effects switches to lite for the rest of the session.
+ */
+function watchFrameRate() {
+  if (settings.fx !== 'auto' || lite) return;
+  const started = performance.now();
+  let frames = 0;
+  let slow = 0;
+  let elapsed = 0;
+  const tick = (time, dt) => {
+    if (document.visibilityState !== 'visible' || performance.now() - started < 6000) return;
+    frames += 1;
+    elapsed += dt;
+    if (dt > 34) slow += 1;
+    if (elapsed < 4000) return;
+    gsap.ticker.remove(tick);
+    const fps = frames / (elapsed / 1000);
+    if (fps < 40 || slow / frames > 0.35) {
+      degraded = true;
+      try { sessionStorage.setItem(LITE_KEY, '1'); } catch { /* ignore */ }
+      applyFx();
+      toast(t('liteToast'));
+    }
+  };
+  gsap.ticker.add(tick);
+}
+
+$('#fx-seg').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-fx]');
+  if (!b) return;
+  settings.fx = b.dataset.fx;
+  persist();
+  applySettings();
+  sound.tick(740, 0.06);
+});
+
 /* ---------- Apply settings ---------- */
 function applySettings(animate = false) {
   body.dataset.theme = settings.theme;
+  applyFx();
   motes.syncColor();
   applyStrings({ title: settings.title, subtitle: settings.subtitle });
   document.title = `${settings.title || t('title')} · ${BRAND}`;
   if (roomName) $('#eyebrow').textContent = fmt('roomEyebrow', { room: roomName });
   if (animate || !title.querySelector('.word')) splitTitle(animate);
 
-  fog.setEnabled(settings.fog);
+  fog.setEnabled(settings.fog && !lite);
   petals.setEnabled(settings.petals);
   sound.setMusic(settings.music);
   sound.setSfx(settings.sfx);
@@ -167,9 +239,14 @@ function parallax() {
 }
 
 /* ---------- Light shimmer ---------- */
-gsap.utils.toArray('.ray').forEach((ray) => {
-  gsap.to(ray, { opacity: () => gsap.utils.random(0.45, 1), duration: () => gsap.utils.random(2, 4.5), repeat: -1, repeatRefresh: true, yoyo: true, ease: 'sine.inOut' });
-});
+function startRays() {
+  const rays = gsap.utils.toArray('.ray');
+  gsap.killTweensOf(rays);
+  if (lite) { gsap.set(rays, { opacity: 0.8 }); return; }
+  rays.forEach((ray) => {
+    gsap.to(ray, { opacity: () => gsap.utils.random(0.45, 1), duration: () => gsap.utils.random(2, 4.5), repeat: -1, repeatRefresh: true, yoyo: true, ease: 'sine.inOut' });
+  });
+}
 
 /* ---------- Rack 42's heart rate: flat while cold, faster with more people and more devotion ---------- */
 let devotion = 0;
@@ -425,13 +502,13 @@ function ignite(at) {
     kick(20, 1.2);
     // sparks fly off the sticks as they catch, and the light from above flares
     gsap.delayedCall(0.5, () => art.tips().forEach((tip) => motes.burst(tip.x, tip.y, 26)));
-    gsap.fromTo('#rays', { filter: 'brightness(2.4)' }, { filter: 'brightness(1)', duration: 2.4, ease: 'power2.out' });
+    if (!lite) gsap.fromTo('#rays', { filter: 'brightness(2.4)' }, { filter: 'brightness(1)', duration: 2.4, ease: 'power2.out' });
     shockwave();
     // Flash + shake of the burner, like a flame catching
     gsap.timeline()
       .to('.burner', { scale: 1.04, duration: 0.15, ease: 'power2.out' })
-      .to('.burner', { scale: 1, duration: 0.8, ease: 'elastic.out(1, 0.4)' })
-      .fromTo('.layer--vignette', { filter: 'brightness(1.6)' }, { filter: 'brightness(1)', duration: 1.4, ease: 'power2.out' }, 0);
+      .to('.burner', { scale: 1, duration: 0.8, ease: 'elastic.out(1, 0.4)' });
+    if (!lite) gsap.fromTo('.layer--vignette', { filter: 'brightness(1.6)' }, { filter: 'brightness(1)', duration: 1.4, ease: 'power2.out' });
     gsap.delayedCall(1.2, () => art.bow(3));
   }
 
@@ -516,7 +593,7 @@ function comboHit() {
   gsap.fromTo(comboEl, { scale: 1.3, opacity: 1, y: 0 }, { scale: 1, duration: 0.5, ease: 'elastic.out(1, 0.4)', overwrite: true });
   if (STRINGS.comboCaptions.some(([at]) => at === combo)) {
     petals.burst(6 + combo);
-    if (combo >= 10) { shockwave(); gsap.fromTo('#rays', { filter: 'brightness(1.8)' }, { filter: 'brightness(1)', duration: 1.6 }); }
+    if (combo >= 10) { shockwave(); if (!lite) gsap.fromTo('#rays', { filter: 'brightness(1.8)' }, { filter: 'brightness(1)', duration: 1.6 }); }
   }
 }
 function comboEnd() {
@@ -1058,6 +1135,7 @@ buildTray();
 dealQuick();
 applySettings();
 intro();
+watchFrameRate();
 parallax();
 startMantras();
 petals.rate = 0.35; // a few stray petals before the incense is lit

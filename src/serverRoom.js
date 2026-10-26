@@ -196,30 +196,34 @@ export function buildServerRoom(host) {
   }
   parts.push('</g>');
 
-  // LEDs
-  parts.push('<g class="leds" filter="url(#rLed)">');
-  for (const l of leds) {
-    const c = LED_COLORS[Math.floor(Math.random() * LED_COLORS.length)];
-    const o = (0.25 + Math.random() * 0.75).toFixed(2);
-    parts.push(`<circle cx="${l.x.toFixed(1)}" cy="${l.y.toFixed(1)}" r="${l.r.toFixed(2)}" fill="${c}" opacity="${o}"/>`);
-  }
-  parts.push('</g>');
-
   // haze near the floor
   parts.push(`<rect x="0" y="${VH * 0.55}" width="${VW}" height="${VH * 0.45}" fill="url(#rCeil)" opacity="0.35" transform="translate(0,${VH}) scale(1,-1) translate(0,-${VH})"/>`);
   parts.push('</svg>');
+
+  // The LEDs live in a second SVG on top. They blink all the time, and a repaint of
+  // this layer costs only a few hundred circles, never the room's big blur filters.
+  // The glow is a second, larger circle under each LED rather than a blur filter: a filter
+  // over hundreds of circles would re-blur the whole screen on every blink.
+  parts.push(`<svg class="room room--leds" viewBox="0 0 ${VW} ${VH}" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">`);
+  const colors = leds.map(() => LED_COLORS[Math.floor(Math.random() * LED_COLORS.length)]);
+  parts.push('<g class="leds-halo" opacity="0.35">');
+  leds.forEach((l, i) => parts.push(`<circle cx="${l.x.toFixed(1)}" cy="${l.y.toFixed(1)}" r="${(l.r * 2.4).toFixed(2)}" fill="${colors[i]}"/>`));
+  parts.push('</g><g class="leds">');
+  leds.forEach((l, i) => parts.push(`<circle cx="${l.x.toFixed(1)}" cy="${l.y.toFixed(1)}" r="${l.r.toFixed(2)}" fill="${colors[i]}" opacity="${(0.25 + Math.random() * 0.75).toFixed(2)}"/>`));
+  parts.push('</g></svg>');
 
   host.innerHTML = parts.join('\n');
 
   // Blink: every tick, a handful of random LEDs change brightness. No tweens needed.
   const nodes = [...host.querySelectorAll('.leds circle')];
   let acc = 0;
+  let lite = false;
   gsap.ticker.add((time, dt) => {
     acc += dt;
-    if (acc < 0.09) return;
+    if (acc < (lite ? 0.28 : 0.09)) return;
     acc = 0;
     if (document.visibilityState !== 'visible') return;
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < (lite ? 6 : 14); i++) {
       const n = nodes[(Math.random() * nodes.length) | 0];
       n.setAttribute('opacity', (Math.random() < 0.3 ? 0.1 : 0.4 + Math.random() * 0.6).toFixed(2));
     }
@@ -230,5 +234,7 @@ export function buildServerRoom(host) {
     pulse() {
       gsap.fromTo(host.querySelector('.leds'), { opacity: 1.6 }, { opacity: 1, duration: 1.4, ease: 'power2.out' });
     },
+    /** Lite mode: the LEDs blink less often (the glow filter is dropped in CSS). */
+    setLite(on) { lite = on; },
   };
 }

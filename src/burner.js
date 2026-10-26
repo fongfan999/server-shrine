@@ -173,7 +173,7 @@ export function buildBurner(host) {
 
   <!-- table -->
   <g class="altar-table">
-    <ellipse cx="260" cy="440" rx="250" ry="16" fill="#000" opacity="0.6" filter="url(#bSofter)"/>
+    <ellipse class="shade" cx="260" cy="440" rx="250" ry="16" fill="#000" opacity="0.6" filter="url(#bSofter)"/>
     <rect x="22" y="${TABLE_Y}" width="476" height="18" rx="4" fill="url(#bWood)"/>
     <rect x="22" y="${TABLE_Y}" width="476" height="3" fill="#c9962b" opacity="0.55"/>
     <rect x="40" y="416" width="18" height="34" rx="3" fill="#1c0c05"/>
@@ -187,24 +187,20 @@ export function buildBurner(host) {
   <!-- candles -->
   ${CANDLES.map((c, i) => `
   <g class="candle" data-i="${i}">
-    <ellipse cx="${c.x}" cy="${TABLE_Y}" rx="16" ry="5" fill="#000" opacity="0.45" filter="url(#bSoft)"/>
+    <ellipse class="shade" cx="${c.x}" cy="${TABLE_Y}" rx="16" ry="5" fill="#000" opacity="0.45" filter="url(#bSoft)"/>
     <ellipse cx="${c.x}" cy="396" rx="20" ry="6" fill="url(#bGoldLine)"/>
     <rect x="${c.x - 11}" y="322" width="22" height="74" rx="3" fill="url(#bCandle)"/>
     <rect x="${c.x - 11}" y="352" width="22" height="4" fill="#e2b655" opacity="0.8"/>
     <rect x="${c.x - 11}" y="368" width="22" height="2" fill="#e2b655" opacity="0.5"/>
     <ellipse cx="${c.x}" cy="322" rx="11" ry="3.5" fill="#e04a5a"/>
     <rect x="${c.x - 1}" y="310" width="2" height="12" fill="#2a1408"/>
-    <g class="flame" style="transform-origin: ${c.x}px 320px" opacity="0">
-      <ellipse cx="${c.x}" cy="306" rx="12" ry="20" fill="#ff8a2a" opacity="0.35" filter="url(#bFlameGlow)"/>
-      <path d="M ${c.x} 288 C ${c.x + 7} 298, ${c.x + 8} 310, ${c.x} 318 C ${c.x - 8} 310, ${c.x - 7} 298, ${c.x} 288 Z" fill="url(#bFlame)"/>
-    </g>
   </g>`).join('')}
 
   <!-- offerings land here -->
   <g class="offerings"></g>
 
   <!-- censer shadow on the runner -->
-  <ellipse cx="260" cy="400" rx="110" ry="12" fill="#000" opacity="0.6" filter="url(#bSoft)"/>
+  <ellipse class="shade" cx="260" cy="400" rx="110" ry="12" fill="#000" opacity="0.6" filter="url(#bSoft)"/>
 
   <!-- legs -->
   <g stroke="url(#bGoldLine)" stroke-width="16" stroke-linecap="round" fill="none">
@@ -221,11 +217,11 @@ export function buildBurner(host) {
   <!-- belly -->
   <path d="M 150 ${RIM_Y + 4} C 112 322, 168 380, 260 380 C 352 380, 408 322, 370 ${RIM_Y + 4} Z" fill="url(#bGold)"/>
   <g clip-path="url(#bBodyClip)">
-    <ellipse cx="208" cy="268" rx="46" ry="54" fill="#fff" opacity="0.2" filter="url(#bSoft)"/>
-    <ellipse cx="196" cy="256" rx="12" ry="20" fill="#fff" opacity="0.5" filter="url(#bSoft)"/>
-    <ellipse cx="260" cy="392" rx="140" ry="50" fill="#120a01" opacity="0.8" filter="url(#bSoft)"/>
-    <ellipse cx="392" cy="300" rx="24" ry="76" fill="#3fb4ff" opacity="0.14" filter="url(#bSoft)"/>
-    <ellipse cx="130" cy="310" rx="18" ry="70" fill="#3fb4ff" opacity="0.08" filter="url(#bSoft)"/>
+    <ellipse class="soft" cx="208" cy="268" rx="46" ry="54" fill="#fff" opacity="0.2" filter="url(#bSoft)"/>
+    <ellipse class="soft" cx="196" cy="256" rx="12" ry="20" fill="#fff" opacity="0.5" filter="url(#bSoft)"/>
+    <ellipse class="soft" cx="260" cy="392" rx="140" ry="50" fill="#120a01" opacity="0.8" filter="url(#bSoft)"/>
+    <ellipse class="soft" cx="392" cy="300" rx="24" ry="76" fill="#3fb4ff" opacity="0.14" filter="url(#bSoft)"/>
+    <ellipse class="soft" cx="130" cy="310" rx="18" ry="70" fill="#3fb4ff" opacity="0.08" filter="url(#bSoft)"/>
     <path d="M 118 290 Q 260 334 402 290 L 402 306 Q 260 350 118 306 Z" fill="url(#bFret)" opacity="0.9"/>
     <path d="M 118 290 Q 260 334 402 290" stroke="#2a1803" stroke-opacity="0.5" stroke-width="1.5" fill="none"/>
     <path d="M 118 306 Q 260 350 402 306" stroke="#2a1803" stroke-opacity="0.5" stroke-width="1.5" fill="none"/>
@@ -254,13 +250,25 @@ export function buildBurner(host) {
     <path d="M 370 ${RIM_Y - 6} C 382 198, 344 192, 340 ${RIM_Y - 10}"/>
   </g>
 
+</svg>
+
+<!-- Everything that moves lives here, so the censer above (and its blur filters) is painted once.
+     Same viewBox, same box, and the gradients and filters are shared through the document. -->
+<svg class="burner__svg burner__svg--live" viewBox="0 0 520 470" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <!-- candle flames -->
+  ${CANDLES.map((c) => `
+  <g class="flame" style="transform-origin: ${c.x}px 320px" opacity="0">
+    <ellipse class="soft" cx="${c.x}" cy="306" rx="12" ry="20" fill="#ff8a2a" opacity="0.35" filter="url(#bFlameGlow)"/>
+    <path d="M ${c.x} 288 C ${c.x + 7} 298, ${c.x + 8} 310, ${c.x} 318 C ${c.x - 8} 310, ${c.x - 7} 298, ${c.x} 288 Z" fill="url(#bFlame)"/>
+  </g>`).join('')}
+
   <!-- sticks -->
   <g class="burner__sticks">
     ${STICKS.map((s, i) => `
     <g class="stick" data-i="${i}" transform="rotate(${s.lean} ${s.x} ${STICK_BOTTOM})">
       <rect class="stick__body" x="${s.x - STICK_W / 2}" y="${s.top}" width="${STICK_W}" height="${STICK_BOTTOM - s.top}" rx="2" fill="url(#bStick)"/>
       <rect class="stick__ash" x="${s.x - STICK_W / 2 - 0.5}" y="${s.top}" width="${STICK_W + 1}" height="0" rx="2.5" fill="#a9a29a"/>
-      <circle class="stick__halo" cx="${s.x}" cy="${s.top}" r="10" fill="#ff7a1a" opacity="0" filter="url(#bSoft)"/>
+      <circle class="stick__halo soft" cx="${s.x}" cy="${s.top}" r="10" fill="#ff7a1a" opacity="0" filter="url(#bSoft)"/>
       <circle class="stick__ember" cx="${s.x}" cy="${s.top}" r="4" fill="#fff0c0" filter="url(#bGlow)" opacity="0"/>
     </g>`).join('')}
   </g>
@@ -268,7 +276,7 @@ export function buildBurner(host) {
   <!-- the ops team, kneeling, backs to us, incense raised -->
   ${[{ x: 34, s: 1.18, flip: 1 }, { x: 486, s: 1.18, flip: -1 }].map((d, i) => `
   <g class="devotee" data-i="${i}" transform="translate(${d.x} 470) scale(${d.flip * d.s} ${d.s})">
-    <ellipse cx="0" cy="-2" rx="34" ry="7" fill="#000" opacity="0.5" filter="url(#bSoft)"/>
+    <ellipse class="shade" cx="0" cy="-2" rx="34" ry="7" fill="#000" opacity="0.5" filter="url(#bSoft)"/>
     <!-- legs folded under -->
     <path d="M -30 0 Q -32 -24 -12 -30 L 14 -30 Q 32 -24 30 0 Z" fill="#06080c"/>
     <path d="M -30 0 Q -32 -24 -12 -30" class="rim" stroke-opacity="0.18" stroke-width="2" fill="none"/>
@@ -292,7 +300,7 @@ export function buildBurner(host) {
 </svg>`;
 
   const svg = host.querySelector('svg');
-  const sticks = [...svg.querySelectorAll('.stick')].map((g, i) => ({
+  const sticks = [...host.querySelectorAll('.stick')].map((g, i) => ({
     g,
     body: g.querySelector('.stick__body'),
     ash: g.querySelector('.stick__ash'),
@@ -300,22 +308,73 @@ export function buildBurner(host) {
     halo: g.querySelector('.stick__halo'),
     top: STICKS[i].top,
   }));
-  const flames = [...svg.querySelectorAll('.flame')];
-  const devotees = [...svg.querySelectorAll('.devotee__upper')];
-  const devoteeEmbers = [...svg.querySelectorAll('.devotee__ember')];
-  const offeringsG = svg.querySelector('.offerings');
+  const flames = [...host.querySelectorAll('.flame')];
+  const devotees = [...host.querySelectorAll('.devotee__upper')];
+  const devoteeEmbers = [...host.querySelectorAll('.devotee__ember')];
+  const offeringsG = host.querySelector('.offerings');
   const offerings = []; // { el, slot }
 
-  gsap.to(svg.querySelector('.burner__shine'), {
-    attr: { x: 560 }, duration: 8, repeat: -1, repeatDelay: 6, ease: 'sine.inOut',
-  });
-
-  // the devotees sway almost imperceptibly while they wait
-  devotees.forEach((d, i) => {
-    gsap.to(d, { rotation: i ? -1.5 : 1.5, duration: 3.4, yoyo: true, repeat: -1, ease: 'sine.inOut', delay: i * 0.7 });
-  });
-
+  const shine = host.querySelector('.burner__shine');
+  let lite = false;
+  let burning = false;
   let burnTl = null;
+  let flickerCall = null;
+
+  // Anything that moves inside this SVG repaints the whole censer, blur filters and
+  // all, so in lite mode the idle motion stops and the flames update 6 times a second.
+  function startShine() {
+    gsap.killTweensOf(shine);
+    if (lite) { gsap.set(shine, { attr: { x: -140 } }); return; }
+    gsap.to(shine, { attr: { x: 560 }, duration: 8, repeat: -1, repeatDelay: 16, ease: 'sine.inOut' });
+  }
+
+  /** The devotees sway almost imperceptibly while they wait. */
+  function startSway() {
+    devotees.forEach((d, i) => {
+      gsap.killTweensOf(d, 'rotation');
+      if (lite) { gsap.set(d, { rotation: 0 }); return; }
+      gsap.to(d, { rotation: i ? -1.5 : 1.5, duration: 3.4, yoyo: true, repeat: -1, ease: 'sine.inOut', delay: i * 0.7 });
+    });
+  }
+
+  function stopFlicker() {
+    flickerCall?.kill();
+    flickerCall = null;
+    flames.forEach((f) => gsap.killTweensOf(f, 'scaleX,scaleY,rotation'));
+  }
+
+  function startFlicker() {
+    stopFlicker();
+    if (lite) {
+      const step = () => {
+        flames.forEach((f) => gsap.set(f, { scaleY: gsap.utils.random(0.88, 1.12), scaleX: gsap.utils.random(0.92, 1.08), rotation: gsap.utils.random(-4, 4) }));
+        flickerCall = gsap.delayedCall(0.16, step);
+      };
+      step();
+      return;
+    }
+    flames.forEach((f) => gsap.to(f, {
+      scaleY: () => gsap.utils.random(0.85, 1.15),
+      scaleX: () => gsap.utils.random(0.9, 1.1),
+      rotation: () => gsap.utils.random(-5, 5),
+      duration: 0.18, repeat: -1, repeatRefresh: true, ease: 'sine.inOut',
+    }));
+  }
+
+  /** The embers pulse while the sticks burn; in lite mode they just glow. */
+  function startEmbers() {
+    const all = [...sticks.map((s) => s.ember), ...sticks.map((s) => s.halo), ...devoteeEmbers];
+    all.forEach((e) => gsap.killTweensOf(e, 'opacity'));
+    if (lite) { gsap.set(sticks.map((s) => s.ember), { opacity: 1 }); gsap.set(devoteeEmbers, { opacity: 0.8 }); return; }
+    sticks.forEach((s, i) => {
+      gsap.to(s.ember, { opacity: 0.55, duration: gsap.utils.random(0.4, 0.8), yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 1 + i * 0.3 });
+      gsap.to(s.halo, { opacity: 0.3, duration: gsap.utils.random(0.5, 1), yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 1.2 + i * 0.3 });
+    });
+    devoteeEmbers.forEach((e, i) => gsap.to(e, { opacity: 0.5, duration: 0.6, yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 1.5 + i * 0.3 }));
+  }
+
+  startShine();
+  startSway();
 
   return {
     svg,
@@ -330,18 +389,12 @@ export function buildBurner(host) {
     /** Light up: candles catch, embers glow, sticks burn down over `seconds`. */
     light(seconds = 600) {
       burnTl?.kill();
+      burning = true;
       burnTl = gsap.timeline();
-      flames.forEach((f, i) => {
-        burnTl.to(f, { opacity: 1, duration: 0.5, ease: 'power2.out' }, 0.1 + i * 0.25);
-        gsap.to(f, {
-          scaleY: () => gsap.utils.random(0.85, 1.15),
-          scaleX: () => gsap.utils.random(0.9, 1.1),
-          rotation: () => gsap.utils.random(-5, 5),
-          duration: 0.18, repeat: -1, repeatRefresh: true, ease: 'sine.inOut',
-        });
-      });
+      flames.forEach((f, i) => burnTl.to(f, { opacity: 1, duration: 0.5, ease: 'power2.out' }, 0.1 + i * 0.25));
+      startFlicker();
       burnTl.to(devoteeEmbers, { opacity: 1, duration: 0.6, stagger: 0.2 }, 0.8);
-      devoteeEmbers.forEach((e, i) => gsap.to(e, { opacity: 0.5, duration: 0.6, yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 1.5 + i * 0.3 }));
+      burnTl.call(startEmbers, null, 1.4);
       sticks.forEach((s, i) => {
         const burnTo = STICK_BOTTOM - 50 - i * 6;
         burnTl
@@ -351,14 +404,20 @@ export function buildBurner(host) {
           .to(s.body, { attr: { y: burnTo, height: STICK_BOTTOM - burnTo }, duration: seconds, ease: 'none' }, 1)
           .to(s.ember, { attr: { cy: burnTo }, duration: seconds, ease: 'none' }, 1)
           .to(s.ash, { attr: { y: burnTo - 10, height: 10 }, duration: seconds, ease: 'none' }, 1);
-        gsap.to(s.ember, { opacity: 0.55, duration: gsap.utils.random(0.4, 0.8), yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 1 + i * 0.3 });
-        gsap.to(s.halo, { opacity: 0.3, duration: gsap.utils.random(0.5, 1), yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 1.2 + i * 0.3 });
       });
+    },
+
+    /** Lite mode: no idle motion, slow flame flicker, steady embers. */
+    setLite(on) {
+      lite = on;
+      startShine();
+      startSway();
+      if (burning) { startFlicker(); startEmbers(); }
     },
 
     /** Show or hide the two built-in ops-team devotees (rooms show the real people instead). */
     setOpsTeam(show) {
-      svg.querySelectorAll('.devotee').forEach((d) => { d.style.display = show ? '' : 'none'; });
+      host.querySelectorAll('.devotee').forEach((d) => { d.style.display = show ? '' : 'none'; });
     },
 
     /** Jump the burn to `elapsed` seconds in (late joiners, or a tab that was asleep). */
@@ -369,6 +428,8 @@ export function buildBurner(host) {
     /** Burned out: embers and candles fade, ash falls, fresh sticks appear. */
     extinguish() {
       burnTl?.kill();
+      burning = false;
+      stopFlicker();
       const tl = gsap.timeline();
       flames.forEach((f) => { gsap.killTweensOf(f); tl.to(f, { opacity: 0, duration: 1 }, 0); });
       devoteeEmbers.forEach((e) => { gsap.killTweensOf(e); tl.to(e, { opacity: 0, duration: 1 }, 0); });
@@ -392,7 +453,7 @@ export function buildBurner(host) {
           .to(d, { scaleY: 1, y: 0, duration: 0.8, ease: 'power2.inOut' }, '+=0.25');
         tl.add(t, i * 0.12);
       });
-      tl.call(() => devotees.forEach((d, i) => gsap.to(d, { rotation: i ? -1.5 : 1.5, duration: 3.4, yoyo: true, repeat: -1, ease: 'sine.inOut' })));
+      tl.call(startSway);
       return tl;
     },
 
@@ -409,7 +470,7 @@ export function buildBurner(host) {
       }
       const el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       el.setAttribute('class', 'offering');
-      el.innerHTML = `<ellipse cx="0" cy="0" rx="16" ry="4" fill="#000" opacity="0.5" filter="url(#bSoft)"/>${def.svg}`;
+      el.innerHTML = `<ellipse class="shade" cx="0" cy="0" rx="16" ry="4" fill="#000" opacity="0.5" filter="url(#bSoft)"/>${def.svg}`;
       el.style.transformOrigin = `${SLOTS[slot]}px ${TABLE_Y}px`;
       gsap.set(el, { x: SLOTS[slot], y: TABLE_Y, scale: 1.3 });
       offeringsG.appendChild(el);

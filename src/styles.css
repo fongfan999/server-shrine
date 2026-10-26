@@ -100,7 +100,7 @@ a { color: inherit; }
 .scene { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 .layer { position: absolute; inset: 0; }
 .layer--bg { inset: -6%; will-change: transform; }
-.layer--bg .room { display: block; width: 100%; height: 100%; }
+.layer--bg .room { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .layer--vignette {
   background:
     radial-gradient(50% 45% at 50% 62%, rgb(var(--accent-rgb) / 0.12), transparent 70%),
@@ -626,7 +626,7 @@ body[data-state="lit"] .altar__floor { opacity: 1; }
 .congregation { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .kneeler { position: absolute; left: 50%; bottom: 0; --rim: #3fb4ff; }
 .kneeler--me { --rim: var(--accent-2); }
-.kneeler__svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.6)); }
+.kneeler__svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .kneeler__rim { stroke: var(--rim); transition: stroke 2s ease; }
 body[data-state="lit"] .kneeler:not(.kneeler--me) { --rim: #ffb347; }
 .burner__svg .rim { stroke: #3fb4ff; transition: stroke 2s ease; }
@@ -690,6 +690,8 @@ body[data-state="lit"] .burner__svg .rflame { opacity: 0.8; animation: candle 1.
 }
 .burner__art { position: relative; width: 100%; height: 100%; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.8)); user-select: none; }
 .burner__svg { display: block; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.burner__svg--live { position: absolute; inset: 0; }
+.burner__svg--live, .burner__svg--live * { pointer-events: none !important; cursor: default; }
 /* only painted shapes catch clicks, never the transparent box around them */
 .burner__svg .altar-table, .burner__svg .candle, .burner__svg .offerings, .burner__svg .devotee,
 .burner__svg > path, .burner__svg > ellipse, .burner__svg > g { pointer-events: visiblePainted; cursor: pointer; }
@@ -1152,6 +1154,22 @@ body[data-state="lit"] .act__label--lit { display: inline; }
 }
 .field input[type="checkbox"]:checked { background: var(--accent); }
 .field input[type="checkbox"]:checked::after { transform: translateX(18px); }
+.seg { display: inline-flex; padding: 3px; border: 1px solid var(--line-strong); border-radius: 999px; background: rgba(255, 255, 255, 0.04); }
+.seg button {
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-dim);
+  transition: background 0.2s, color 0.2s;
+}
+.seg button[aria-checked="true"] { background: var(--accent); color: var(--accent-ink); }
+.field__note { margin: 0; font-family: var(--font-ui); font-size: 0.78rem; line-height: 1.45; letter-spacing: 0; text-transform: none; color: var(--ink-faint); }
 .swatches { display: flex; gap: 10px; }
 .swatch {
   width: 30px;
@@ -1169,6 +1187,43 @@ body[data-state="lit"] .act__label--lit { display: inline; }
 
 /* ---------- Mode switches ---------- */
 body[data-mode="room"] .card--solo { display: none; }
+
+/* ---------- Lite effects: no blur filters, no blend layers, no backdrop blur ----------
+   Phones and slow devices get this automatically; it is also a setting. Every rule
+   here removes something that is re-rasterized or re-blended every frame. */
+body[data-fx="lite"] .layer--grain { display: none; }
+body[data-fx="lite"] .pointer-light { display: none; }
+body[data-fx="lite"] .layer--rays { mix-blend-mode: normal; opacity: 0.35; }
+body[data-fx="lite"][data-state="lit"] .layer--rays { opacity: 0.75; }
+body[data-fx="lite"] .ray { filter: none; background: linear-gradient(to bottom, rgb(var(--accent-rgb) / 0.11), rgb(var(--accent-rgb) / 0.03) 55%, transparent 85%); }
+body[data-fx="lite"] .scene::after { mix-blend-mode: normal; animation: none !important; }
+body[data-fx="lite"][data-state="lit"] .scene::after { opacity: 0.55; }
+body[data-fx="lite"] .hang { filter: none; }
+body[data-fx="lite"] .hang__glow { display: none; }
+body[data-fx="lite"] .burner__art, body[data-fx="lite"] .kneeler__svg, body[data-fx="lite"] .title, body[data-fx="lite"] .title .word--accent, body[data-fx="lite"] .ema__wood { filter: none; }
+body[data-fx="lite"] .burner__svg [filter] { filter: none; }
+body[data-fx="lite"] .burner__svg .soft { display: none; }
+body[data-fx="lite"] .burner__svg .shade { opacity: 0.28; }
+body[data-fx="lite"] .burner__svg .rflame { animation: none !important; }
+body[data-fx="lite"] .kneeler__halo { display: none; }
+body[data-fx="lite"] .kneeler__ember { filter: none; }
+body[data-fx="lite"] .room--leds .leds-halo { display: none; }
+body[data-fx="lite"] .petal { box-shadow: none; }
+body[data-fx="lite"] .lantern { box-shadow: 0 0 30px rgb(var(--accent-rgb) / 0.45); }
+body[data-fx="lite"] .shock { box-shadow: none; }
+body[data-fx="lite"] .altar__glow { animation: none !important; }
+body[data-fx="lite"] .card, body[data-fx="lite"] .pray, body[data-fx="lite"] .actions, body[data-fx="lite"] .btn--glass, body[data-fx="lite"] .icon-btn,
+body[data-fx="lite"] .room-chip, body[data-fx="lite"] .presence, body[data-fx="lite"] .kneeler__tag, body[data-fx="lite"] .toast,
+body[data-fx="lite"] .join, body[data-fx="lite"] .join__card, body[data-fx="lite"] .panel, body[data-fx="lite"] .tray { backdrop-filter: none; -webkit-backdrop-filter: none; }
+body[data-fx="lite"] .card, body[data-fx="lite"] .pray, body[data-fx="lite"] .actions {
+  background:
+    linear-gradient(180deg, rgba(22, 21, 16, 0.92), rgba(10, 11, 9, 0.9)) padding-box,
+    linear-gradient(160deg, rgb(var(--accent-rgb) / 0.5), rgba(255, 255, 255, 0.07) 28%, rgba(255, 255, 255, 0.04) 72%, rgb(var(--accent-rgb) / 0.3)) border-box;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+body[data-fx="lite"] .btn--glass, body[data-fx="lite"] .icon-btn, body[data-fx="lite"] .room-chip, body[data-fx="lite"] .presence, body[data-fx="lite"] .quick__chip { background: rgba(14, 15, 13, 0.88); }
+body[data-fx="lite"] .kneeler__tag, body[data-fx="lite"] .kneeler-more { background: rgba(10, 11, 9, 0.92); }
+body[data-fx="lite"] .toast, body[data-fx="lite"] .join__card, body[data-fx="lite"] .panel, body[data-fx="lite"] .tray { background: rgba(14, 15, 13, 0.96); }
 
 /* ---------- Responsive ---------- */
 @media (max-height: 760px) {

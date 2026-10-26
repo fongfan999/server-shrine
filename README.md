@@ -49,6 +49,12 @@ shrine.
   sits a little higher than the last.
 - **Ranks**: karma promotes you from lurker in #incidents to enlightened SRE,
   with a toast and a shower of petals at every promotion.
+- **Effects levels**: phones, small tablets and anything that reports a weak
+  CPU get *lite* effects (no blur filters, blend layers or backdrop blur, fewer
+  particles, flames that flicker at 6 fps instead of 60). Desktops start with
+  the full set and drop to lite for the session if the frame rate falls below
+  40 fps after the intro. Pick one yourself under Customize, or with `?fx=lite`
+  / `?fx=full`.
 - **Atmosphere**: a camera push down the server corridor on load, light rays
   and dust over the altar, red paper lanterns, sparks when the incense
   catches, golden shockwaves across the floor when the bowl rings, and the

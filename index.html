@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/src/styles.css" />
 </head>
-<body data-theme="gold" data-state="unlit" data-mode="solo">
+<body data-theme="gold" data-state="unlit" data-mode="solo" data-fx="full">
   <!-- Layered scene -->
   <div class="scene" id="scene" aria-hidden="true">
     <div class="layer layer--bg" id="server-room"></div>
@@ -255,6 +255,15 @@
           <button type="button" class="swatch" data-theme="sakura" style="--c:#ff9fc1" aria-label="Sakura"></button>
           <button type="button" class="swatch" data-theme="ember" style="--c:#ff6b3d" aria-label="Ember"></button>
         </div>
+      </div>
+      <div class="field">
+        <span data-i18n="fFx">Effects</span>
+        <div class="seg" id="fx-seg" role="radiogroup" aria-label="Effects">
+          <button type="button" role="radio" data-fx="auto" aria-checked="true" data-i18n="fxAuto">Auto</button>
+          <button type="button" role="radio" data-fx="full" aria-checked="false" data-i18n="fxFull">Full</button>
+          <button type="button" role="radio" data-fx="lite" aria-checked="false" data-i18n="fxLite">Lite</button>
+        </div>
+        <p class="field__note" id="fx-note"></p>
       </div>
       <label class="field field--row">
         <span data-i18n="fMusic">Background music</span>

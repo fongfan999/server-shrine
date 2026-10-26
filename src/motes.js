@@ -15,18 +15,26 @@ export class Motes {
     this.sparks = [];
     this.glow = 0.45; // tweened towards 1 when lit
     this.rgb = '232,181,77';
+    this.lite = false;
+    this.acc = 0;
     this.resize();
     window.addEventListener('resize', () => this.resize());
     gsap.ticker.add((time, dt) => this.frame(time, dt / 1000));
   }
 
   resize() {
-    this.dpr = Math.min(1.5, devicePixelRatio || 1);
+    this.dpr = this.lite ? 1 : Math.min(1.5, devicePixelRatio || 1);
     this.w = innerWidth;
     this.h = innerHeight;
     this.canvas.width = Math.round(this.w * this.dpr);
     this.canvas.height = Math.round(this.h * this.dpr);
-    this.motes = Array.from({ length: MOTES }, () => this.mote(true));
+    this.motes = Array.from({ length: this.lite ? MOTES / 3 : MOTES }, () => this.mote(true));
+  }
+
+  /** Lite mode: a third of the motes on a 1x canvas, redrawn at 30 fps. */
+  setLite(on) {
+    this.lite = on;
+    this.resize();
   }
 
   /** A mote somewhere inside the cone of light that falls on the altar. */
@@ -71,6 +79,12 @@ export class Motes {
 
   frame(time, dt) {
     if (dt > 0.1) dt = 0.1;
+    if (this.lite) {
+      this.acc += dt;
+      if (this.acc < 1 / 32) return;
+      dt = this.acc;
+      this.acc = 0;
+    }
     const { ctx, dpr } = this;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, this.w, this.h);

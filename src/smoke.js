@@ -41,7 +41,8 @@ export class IncenseSmoke {
     this.gust = 0;
     this.time = 0;
     this.sprite = makePuffSprite();
-    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.lite = false;
+    this.dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     this.resize();
     window.addEventListener('resize', () => this.resize());
     gsap.ticker.add((t, dt) => this.frame(dt));
@@ -55,6 +56,13 @@ export class IncenseSmoke {
     this.canvas.width = Math.round(this.w * this.dpr);
     this.canvas.height = Math.round(this.h * this.dpr);
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+  }
+
+  /** Lite mode: a 1x canvas, half the ribbon points, no canvas shadows. */
+  setLite(on) {
+    this.lite = on;
+    this.dpr = on ? 1 : Math.min(window.devicePixelRatio || 1, 1.5);
+    this.resize();
   }
 
   start() {
@@ -110,7 +118,7 @@ export class IncenseSmoke {
 
       // emit
       rb.acc += ms;
-      if (emitting && rb.acc >= EMIT_EVERY) {
+      if (emitting && rb.acc >= (this.lite ? EMIT_EVERY * 2.2 : EMIT_EVERY)) {
         rb.acc = 0;
         rb.pts.push({ age: 0, jx: 0, jv: 0, seed: Math.random() });
       }
@@ -211,8 +219,7 @@ export class IncenseSmoke {
       s.y += s.vy * ms;
       ctx.globalAlpha = (1 - a) * 0.9;
       ctx.fillStyle = a < 0.4 ? '#ffe9b0' : '#ff9a3c';
-      ctx.shadowColor = '#ff8a2a';
-      ctx.shadowBlur = 6;
+      if (!this.lite) { ctx.shadowColor = '#ff8a2a'; ctx.shadowBlur = 6; }
       ctx.beginPath();
       ctx.arc(s.x, s.y, 1.4 - a * 0.6, 0, Math.PI * 2);
       ctx.fill();

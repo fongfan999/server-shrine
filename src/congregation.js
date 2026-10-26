@@ -42,6 +42,7 @@ export class Congregation {
     this.items = new Map(); // id -> { el, upper, ember, halo, person }
     this.order = [];
     this.lit = false;
+    this.lite = false;
     this.more = document.createElement('div');
     this.more.className = 'kneeler-more';
     this.more.hidden = true;
@@ -81,9 +82,20 @@ export class Congregation {
     };
     this.label(item, person, mine);
     this.items.set(person.id, item);
-    // a slow, out-of-step sway so the room never looks frozen
-    gsap.to(item.upper, { rotation: gsap.utils.random(-1.6, 1.6), svgOrigin: '0 -30', duration: gsap.utils.random(2.8, 4), yoyo: true, repeat: -1, ease: 'sine.inOut', delay: Math.random() * 2 });
+    this.sway(item);
     if (this.lit) this.glow(item, true);
+  }
+
+  /** A slow, out-of-step sway so the room never looks frozen. Skipped in lite mode: each sway repaints a figure every frame. */
+  sway(item) {
+    gsap.killTweensOf(item.upper, 'rotation');
+    if (this.lite) { gsap.set(item.upper, { rotation: 0, svgOrigin: '0 -30' }); return; }
+    gsap.to(item.upper, { rotation: gsap.utils.random(-1.6, 1.6), svgOrigin: '0 -30', duration: gsap.utils.random(2.8, 4), yoyo: true, repeat: -1, ease: 'sine.inOut', delay: Math.random() * 2 });
+  }
+
+  setLite(on) {
+    this.lite = on;
+    for (const item of this.items.values()) { this.sway(item); if (this.lit) this.glow(item, true); }
   }
 
   label(item, person, mine) {
@@ -176,6 +188,6 @@ export class Congregation {
     if (!on) { gsap.to([item.ember, item.halo], { opacity: 0, duration: 1 }); return; }
     gsap.to(item.ember, { opacity: 1, duration: 0.6 });
     gsap.to(item.halo, { opacity: 0.45, duration: 0.6 });
-    gsap.to(item.ember, { opacity: 0.5, duration: gsap.utils.random(0.5, 0.9), yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 0.6 });
+    if (!this.lite) gsap.to(item.ember, { opacity: 0.5, duration: gsap.utils.random(0.5, 0.9), yoyo: true, repeat: -1, ease: 'sine.inOut', delay: 0.6 });
   }
 }
