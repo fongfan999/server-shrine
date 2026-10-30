@@ -236,6 +236,7 @@ export class IncenseSmoke {
     ctx.globalAlpha = 1;
 
     // sparks
+    if (this.sparks.length) ctx.fillStyle = `rgb(${this.spark})`;
     for (let k = this.sparks.length - 1; k >= 0; k--) {
       const s = this.sparks[k];
       s.age += ms;
@@ -244,7 +245,6 @@ export class IncenseSmoke {
       s.x += (s.vx + Math.sin(s.age * 0.02) * 0.02) * ms;
       s.y += s.vy * ms;
       ctx.globalAlpha = (1 - a) * 0.9;
-      ctx.fillStyle = `rgb(${this.spark})`;
       ctx.beginPath();
       ctx.arc(s.x, s.y, 1.4 - a * 0.6, 0, Math.PI * 2);
       ctx.fill();

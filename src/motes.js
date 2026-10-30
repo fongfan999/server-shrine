@@ -89,20 +89,21 @@ export class Motes {
     const { ctx, dpr } = this;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, this.w, this.h);
-    const rgb = this.rgb;
+    // One colour per layer and alpha via globalAlpha: no rgba() string to build and parse for every dot.
+    ctx.fillStyle = `rgb(${this.rgb})`;
 
     for (let i = 0; i < this.motes.length; i++) {
       const m = this.motes[i];
       m.x += (m.vx + Math.sin(time * 0.6 + m.tw) * 4) * dt;
       m.y += m.vy * dt;
       if (m.y < -10) { this.motes[i] = this.mote(false); continue; }
-      const a = 0.5 * m.a * this.glow * (0.6 + 0.4 * Math.sin(time * 2 + m.tw));
-      ctx.fillStyle = `rgba(${rgb},${a.toFixed(3)})`;
+      ctx.globalAlpha = 0.5 * m.a * this.glow * (0.6 + 0.4 * Math.sin(time * 2 + m.tw));
       ctx.beginPath();
       ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
       ctx.fill();
     }
 
+    if (this.sparks.length) ctx.fillStyle = `rgb(${this.spark})`;
     for (let i = this.sparks.length - 1; i >= 0; i--) {
       const s = this.sparks[i];
       s.life += dt;
@@ -112,10 +113,11 @@ export class Motes {
       s.x += s.vx * dt;
       s.y += s.vy * dt;
       const k = 1 - s.life / s.ttl;
-      ctx.fillStyle = `rgba(${this.spark},${(k * 0.9).toFixed(3)})`;
+      ctx.globalAlpha = k * 0.9;
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r * (0.5 + k), 0, Math.PI * 2);
       ctx.fill();
     }
+    ctx.globalAlpha = 1;
   }
 }

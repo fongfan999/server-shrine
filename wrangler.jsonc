@@ -6,7 +6,9 @@
   "assets": {
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    "run_worker_first": true
+    // Only the API and /new need code; the page and its files come straight from the asset store,
+    // with headers from public/_headers.
+    "run_worker_first": ["/api/*", "/new"]
   },
   "durable_objects": {
     "bindings": [{ "name": "SHRINE", "class_name": "Shrine" }]

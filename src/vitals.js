@@ -32,7 +32,7 @@ export class Vitals {
     this.amp = 1;
     this.ys = [];
     this.x = 0;
-    onPalette((p) => { this.colors = p; });
+    onPalette((p) => { this.colors = p; this.grid = null; });
     this.resize();
     new ResizeObserver(() => this.resize()).observe(canvas);
     gsap.ticker.add((time, dt) => this.frame(time, dt / 1000));
@@ -40,6 +40,8 @@ export class Vitals {
 
   resize() {
     const dpr = Math.min(2, devicePixelRatio || 1);
+    this.dpr = dpr;
+    this.grid = null;
     this.w = this.canvas.clientWidth;
     this.h = this.canvas.clientHeight;
     if (!this.w) return;
@@ -48,6 +50,23 @@ export class Vitals {
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.ys = new Array(Math.ceil(this.w)).fill(0);
     this.x = 0;
+  }
+
+  /** The faint grid never moves, so it is stroked once into its own canvas and copied in every frame. */
+  gridLayer() {
+    const { w, h, dpr } = this;
+    const c = document.createElement('canvas');
+    c.width = Math.round(w * dpr);
+    c.height = Math.round(h * dpr);
+    const g = c.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.strokeStyle = `rgb(${this.colors.line})`;
+    g.lineWidth = 1;
+    g.beginPath();
+    for (let gx = 0; gx < w; gx += 12) { g.moveTo(gx + 0.5, 0); g.lineTo(gx + 0.5, h); }
+    for (let gy = 0; gy < h; gy += 12) { g.moveTo(0, gy + 0.5); g.lineTo(w, gy + 0.5); }
+    g.stroke();
+    return c;
   }
 
   setBpm(bpm) {
@@ -89,14 +108,10 @@ export class Vitals {
     ctx.clearRect(0, 0, w, h);
 
     // faint grid, then the trace in green while the rack lives and in rust while it flatlines
-    const { line, live, error } = this.colors;
+    const { live, error } = this.colors;
     const trace = this.bpm > 0 ? live : error;
-    ctx.strokeStyle = `rgb(${line})`;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    for (let gx = 0; gx < w; gx += 12) { ctx.moveTo(gx + 0.5, 0); ctx.lineTo(gx + 0.5, h); }
-    for (let gy = 0; gy < h; gy += 12) { ctx.moveTo(0, gy + 0.5); ctx.lineTo(w, gy + 0.5); }
-    ctx.stroke();
+    this.grid ??= this.gridLayer();
+    ctx.drawImage(this.grid, 0, 0, w, h);
 
     // the trace, drawn oldest to newest so it fades in behind the write head
     const n = this.ys.length;

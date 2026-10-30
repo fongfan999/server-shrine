@@ -5,8 +5,8 @@
  * - /new         → redirects to a freshly named prayer room
  * - /api/rooms/:room/ws → WebSocket into that room's Shrine Durable Object
  * - /r/:room     → the page itself (the client notices it is in a room)
- * - everything else → static assets from ./dist (built by Vite) with
- *   security + cache headers added.
+ * Everything else (the page, /r/:room, bundles) is served by the asset store
+ * without running this Worker; its headers live in public/_headers.
  */
 
 import { Shrine } from './shrine.js';
@@ -102,20 +102,7 @@ export default {
       return env.SHRINE.get(env.SHRINE.idFromName(room)).fetch(request);
     }
 
-    // Serve the static site (unknown paths such as /r/:room get index.html).
-    const res = await env.ASSETS.fetch(request);
-    const headers = new Headers(res.headers);
-    for (const [k, v] of Object.entries(SECURITY_HEADERS)) headers.set(k, v);
-
-    // Hashed Vite bundles can be cached forever; everything else briefly.
-    if (/\/assets\/.*-[a-zA-Z0-9_-]{8,}\.(js|css)$/.test(url.pathname)) {
-      headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-    } else if (/\.(png|jpg|svg|mp3|webp)$/.test(url.pathname)) {
-      headers.set('Cache-Control', 'public, max-age=86400');
-    } else {
-      headers.set('Cache-Control', 'public, max-age=60');
-    }
-
-    return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+    // Only unknown /api/* paths get here: run_worker_first sends nothing else to the Worker.
+    return json({ error: 'not found' }, { status: 404 });
   },
 };

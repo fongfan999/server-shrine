@@ -128,7 +128,7 @@ src/palette.js      theme colours for the canvas layers
 src/icons.js        line icons for the dock, tray and pings
 public/favicon.svg  the mark
 public/wotdafong-*.svg  the Wot Da Fong P?! mark for the credit line
-worker/index.js     Cloudflare Worker: routes, /new, API, asset headers
+worker/index.js     Cloudflare Worker: /new and the API (static files skip it; headers in public/_headers)
 worker/shrine.js    Shrine Durable Object: one per room
 wrangler.jsonc      Worker + Durable Object config
 ```

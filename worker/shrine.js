@@ -11,6 +11,7 @@ export const BURN_SECONDS = 600; // keep in sync with src/main.js
 const MAX_PRAYERS = 12;
 const MAX_OFFERINGS = 4; // the altar table has four slots
 const FORGET_AFTER = 30 * 24 * 3600 * 1000; // rooms nobody visits for 30 days are swept
+const TOUCH_EVERY = 24 * 3600 * 1000; // pushing the sweep back once a day is plenty, and saves a write per action
 const OFFERING_KINDS = ['energy', 'noodles', 'duck', 'coffee', 'keyboard', 'usb', 'laptop']; // keys of OFFERINGS in src/burner.js
 const AVATARS = ['🧘', '🙇', '🙏', '🧑‍💻', '👩‍💻', '👨‍💻', '🐒', '🤖', '🦆', '🐱'];
 
@@ -36,6 +37,7 @@ export class Shrine extends DurableObject {
     ctx.blockConcurrencyWhile(async () => {
       const saved = await ctx.storage.get('altar');
       this.stored = saved !== undefined;
+      this.alarmAt = (await ctx.storage.getAlarm()) ?? 0;
       this.state = { ...EMPTY, ...saved };
     });
   }
@@ -140,6 +142,7 @@ export class Shrine extends DurableObject {
     if (this.ctx.getWebSockets().length) return this.touch();
     await this.ctx.storage.deleteAll();
     this.stored = false;
+    this.alarmAt = 0;
   }
 
   left(ws) {
@@ -191,6 +194,9 @@ export class Shrine extends DurableObject {
   }
 
   async touch() {
-    await this.ctx.storage.setAlarm(Date.now() + FORGET_AFTER);
+    const at = Date.now() + FORGET_AFTER;
+    if (at - this.alarmAt < TOUCH_EVERY) return;
+    this.alarmAt = at;
+    await this.ctx.storage.setAlarm(at);
   }
 }
